@@ -119,21 +119,67 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       }
     };
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    
-    const apiRes = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let apiRes;
+    let apiData;
+    let attempts = 0;
+    const maxAttempts = 3;
+    const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
 
-    const apiData = await apiRes.json();
+    while (attempts < maxAttempts) {
+      const currentModel = models[attempts % models.length];
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
+      
+      console.log(`Calling Gemini API (Attempt ${attempts + 1}/${maxAttempts}) using model: ${currentModel}...`);
+      
+      try {
+        apiRes = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
 
-    if (!apiRes.ok) {
-      console.error("Gemini API Error:", apiData);
-      throw new Error(apiData.error?.message || 'Gagal memanggil API Gemini.');
+        apiData = await apiRes.json();
+
+        if (apiRes.ok) {
+          break; // Success!
+        }
+
+        console.warn(`Attempt ${attempts + 1} failed:`, apiData?.error?.message || apiRes.statusText);
+
+        const errorMessage = apiData?.error?.message || "";
+        const isTemporaryError = 
+          apiRes.status === 429 || 
+          apiRes.status === 503 || 
+          apiRes.status === 500 || 
+          errorMessage.toLowerCase().includes("high demand") || 
+          errorMessage.toLowerCase().includes("quota") ||
+          errorMessage.toLowerCase().includes("limit");
+
+        if (!isTemporaryError) {
+          // If it's a structural error (invalid api key, bad request structure), throw immediately
+          throw new Error(errorMessage || 'Gagal memanggil API Gemini.');
+        }
+
+      } catch (err) {
+        console.error(`Error on attempt ${attempts + 1}:`, err.message);
+        if (attempts === maxAttempts - 1) {
+          throw err;
+        }
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        const delay = 1500 * attempts; // 1.5s, 3s backoff
+        console.log(`Waiting ${delay}ms before next attempt...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    if (!apiRes || !apiRes.ok) {
+      console.error("Gemini API Final Error:", apiData);
+      throw new Error(apiData?.error?.message || 'Gagal memanggil API Gemini setelah beberapa percobaan.');
     }
 
     const resultText = apiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
