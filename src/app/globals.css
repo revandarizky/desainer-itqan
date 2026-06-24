@@ -1,15 +1,15 @@
 :root {
   --background: #FAF9F5; /* Warm off-white paper background */
-  --foreground: #1A1A1E; /* Dark charcoal text */
-  --primary: #1A1A1E; /* Flat dark charcoal primary */
-  --primary-hover: #3A3A40;
+  --foreground: #111111; /* Strong dark charcoal text */
+  --primary: #000000; /* Pure black primary */
+  --primary-hover: #222222;
   --surface: #FFFFFF; /* Clean white card panels */
-  --surface-border: rgba(0, 0, 0, 0.08); /* Subtle border for layout lines */
-  --success: #0F766E; /* Deep teal/emerald for success/ready states */
+  --surface-border: rgba(0, 0, 0, 0.15); /* Highly visible border for layout lines */
+  --success: #0D5C56; /* Strong teal/emerald for success/ready states */
   --success-bg: #F0FDFA;
-  --error: #B91C1C; /* Elegant crimson for error/revision warning */
+  --error: #991B1B; /* Rich crimson for error/revision warning */
   --error-bg: #FEF2F2;
-  --warning: #D97706;
+  --warning: #B45309;
   --warning-bg: #FEF3C7;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -87,7 +87,7 @@ body {
 textarea, input[type="text"], input[type="file"] {
   width: 100%;
   background: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.25);
   color: var(--foreground);
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -99,11 +99,11 @@ textarea, input[type="text"], input[type="file"] {
 textarea:focus, input[type="text"]:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(26, 26, 30, 0.05);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 
 textarea::placeholder, input::placeholder {
-  color: rgba(0, 0, 0, 0.3);
+  color: rgba(0, 0, 0, 0.5);
 }
 
 /* Custom Scrollbar */

@@ -23,26 +23,8 @@ const renderFormattedText = (text, type) => {
 };
 
 export default function Home() {
-  const [apiKey, setApiKey] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-
-  // Load API key from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("gemini_api_key");
-      if (savedKey) {
-        setApiKey(savedKey);
-      }
-    }
-  }, []);
-
-  const handleApiKeyChange = (value) => {
-    setApiKey(value);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("gemini_api_key", value);
-    }
-  };
   
   const [activeTab, setActiveTab] = useState("text"); // text, link, file
   const [briefText, setBriefText] = useState("");
@@ -116,7 +98,6 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("image", imageFile);
-      formData.append("apiKey", apiKey.trim());
       formData.append("briefType", activeTab);
 
       if (activeTab === "text") {
@@ -212,16 +193,6 @@ export default function Home() {
                 Brief Referensi
               </h2>
 
-              <div className={styles.apiKeyGroup}>
-                <label className={styles.apiKeyLabel}>Google Gemini API Key</label>
-                <input 
-                  type="password" 
-                  className={styles.apiKeyInput}
-                  placeholder="Masukkan API Key Anda..."
-                  value={apiKey}
-                  onChange={(e) => handleApiKeyChange(e.target.value)}
-                />
-              </div>
 
               <div className={styles.tabs}>
                 <button 
