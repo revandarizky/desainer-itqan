@@ -413,31 +413,6 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* 2. SESUAI BRIEF */}
-                <div className={styles.qcSection}>
-                  <h3 className={styles.qcSectionTitleSuccess}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    Sesuai Brief ({results.sesuai?.length || 0})
-                  </h3>
-                  
-                  {results.sesuai && results.sesuai.length > 0 ? (
-                    <div className={styles.successGrid}>
-                      {results.sesuai.map((item, idx) => (
-                        <div key={idx} className={styles.successItemCard}>
-                          <span className={styles.successItemCheck}>✓</span>
-                          <div className={styles.successItemContent}>
-                            <strong>{item.elemen}</strong>
-                            <p>{item.deskripsi}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={styles.emptySuccess}>
-                      Tidak ada data kecocokan yang dievaluasi.
-                    </div>
-                  )}
-                </div>
               </div>
             ) : (
               // Fallback raw view
