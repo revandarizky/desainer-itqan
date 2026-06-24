@@ -1,6 +1,8 @@
 import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 
+export const maxDuration = 60; // Meningkatkan timeout Vercel Serverless menjadi 60 detik (bawaan Hobby tier adalah 10 detik)
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
