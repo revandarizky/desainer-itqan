@@ -1,5 +1,4 @@
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
 
 export const maxDuration = 60; // Meningkatkan timeout Vercel Serverless menjadi 60 detik (bawaan Hobby tier adalah 10 detik)
 
@@ -77,6 +76,10 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       const fileBuffer = await file.arrayBuffer();
       
       if (file.name.toLowerCase().endsWith('.pdf')) {
+        if (typeof global.DOMMatrix === 'undefined') {
+          global.DOMMatrix = class DOMMatrix {};
+        }
+        const { PDFParse } = await import('pdf-parse');
         const parser = new PDFParse({ data: Buffer.from(fileBuffer) });
         const pdfData = await parser.getText();
         briefContent = pdfData.text;
