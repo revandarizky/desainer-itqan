@@ -36,7 +36,6 @@ export default function Home() {
   const [results, setResults] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [checkedMismatches, setCheckedMismatches] = useState({});
-  const [expandedItems, setExpandedItems] = useState({});
 
   const fileInputRef = useRef(null);
   const briefFileInputRef = useRef(null);
@@ -49,7 +48,6 @@ export default function Home() {
         setImageFile(file);
         setImagePreview(URL.createObjectURL(file));
         setResults(null);
-        setExpandedItems({});
       }
     };
     window.addEventListener("paste", handlePaste);
@@ -63,7 +61,6 @@ export default function Home() {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
       setResults(null);
-      setExpandedItems({});
     }
   };
 
@@ -102,7 +99,6 @@ export default function Home() {
     setIsAnalyzing(true);
     setResults(null);
     setCheckedMismatches({});
-    setExpandedItems({});
 
     try {
       const formData = new FormData();
@@ -130,19 +126,11 @@ export default function Home() {
       }
 
       setResults(data.result);
-      setExpandedItems({ 0: true }); // Open first item by default
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
       setIsAnalyzing(false);
     }
-  };
-
-  const toggleExpand = (idx) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [idx]: !prev[idx]
-    }));
   };
 
   const viewState = isAnalyzing ? 'loading' : results ? 'result' : 'input';
@@ -341,67 +329,38 @@ export default function Home() {
                   </h3>
                   
                   {results.ketidaksesuaian && results.ketidaksesuaian.length > 0 ? (
-                    <div className={styles.accordionList}>
+                    <div className={styles.mismatchList}>
                       {results.ketidaksesuaian.map((item, idx) => {
                         const isChecked = !!checkedMismatches[idx];
-                        const isExpanded = !!expandedItems[idx];
                         return (
                           <div 
                             key={idx} 
-                            className={`${styles.accordionItem} ${isChecked ? styles.accordionItemChecked : ''}`}
+                            className={`${styles.mismatchItem} ${isChecked ? styles.mismatchItemChecked : ''}`}
                           >
-                            {/* Accordion Header */}
-                            <div 
-                              className={styles.accordionHeader}
-                              onClick={() => toggleExpand(idx)}
-                            >
-                              <div className={styles.accordionHeaderLeft}>
-                                <input 
-                                  type="checkbox" 
-                                  checked={isChecked}
-                                  className={styles.mismatchCheckbox}
-                                  onClick={(e) => e.stopPropagation()} // Stop triggering accordion expand/collapse
-                                  onChange={() => setCheckedMismatches(prev => ({
-                                    ...prev,
-                                    [idx]: !prev[idx]
-                                  }))}
-                                />
-                                <span className={styles.mismatchBadge}>{item.elemen}</span>
-                                <span className={styles.accordionTitle}>
-                                  {item.catatan || `Perbedaan pada elemen "${item.elemen}"`}
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              className={styles.mismatchCheckbox}
+                              onChange={() => setCheckedMismatches(prev => ({
+                                ...prev,
+                                [idx]: !prev[idx]
+                              }))}
+                            />
+                            <div className={styles.mismatchCompareRow}>
+                              <div className={styles.mismatchBriefBox}>
+                                <span className={styles.compareLabelMini}>Brief</span>
+                                <span className={styles.compareText}>
+                                  {renderFormattedText(item.di_brief, 'brief')}
                                 </span>
                               </div>
-                              <button 
-                                className={`${styles.orangeToggleBtn} ${isExpanded ? styles.orangeToggleBtnActive : ''}`}
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Stop triggering parent click twice
-                                  toggleExpand(idx);
-                                }}
-                              >
-                                {isExpanded ? "✕" : "+"}
-                              </button>
-                            </div>
-                            
-                            {/* Accordion Body */}
-                            {isExpanded && (
-                              <div className={styles.accordionBody}>
-                                <div className={styles.mismatchCompareRow}>
-                                  <div className={styles.mismatchBriefBox}>
-                                    <span className={styles.compareLabelMini}>Brief</span>
-                                    <span className={styles.compareText}>
-                                      {renderFormattedText(item.di_brief, 'brief')}
-                                    </span>
-                                  </div>
-                                  <div className={styles.mismatchArrow}>➔</div>
-                                  <div className={styles.mismatchDesainBox}>
-                                    <span className={styles.compareLabelMini}>Desain</span>
-                                    <span className={styles.compareText}>
-                                      {renderFormattedText(item.di_gambar, 'desain')}
-                                    </span>
-                                  </div>
-                                </div>
+                              <div className={styles.mismatchArrow}>➔</div>
+                              <div className={styles.mismatchDesainBox}>
+                                <span className={styles.compareLabelMini}>Desain</span>
+                                <span className={styles.compareText}>
+                                  {renderFormattedText(item.di_gambar, 'desain')}
+                                </span>
                               </div>
-                            )}
+                            </div>
                           </div>
                         );
                       })}

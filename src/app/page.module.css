@@ -399,104 +399,38 @@
   letter-spacing: -0.01em;
 }
 
-/* Accordion Layout (Gambar 2 style) */
-.accordionList {
+/* Mismatch Flat List Layout */
+.mismatchList {
   display: flex;
   flex-direction: column;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.accordionItem {
+.mismatchItem {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.accordionItem:last-child {
+.mismatchItem:last-child {
   border-bottom: none;
 }
 
-.accordionItem:hover {
+.mismatchItem:hover {
   background: rgba(255, 255, 255, 0.01);
 }
 
-.accordionItemChecked {
+.mismatchItemChecked {
   opacity: 0.45;
 }
 
-.accordionItemChecked .accordionTitle {
+.mismatchItemChecked .compareText {
   text-decoration: line-through;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.accordionItemChecked .mismatchBadge {
-  background: rgba(255, 255, 255, 0.02) !important;
-  color: rgba(255, 255, 255, 0.25) !important;
-  border-color: transparent !important;
-}
-
-.accordionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.15rem 1.5rem;
-  cursor: pointer;
-  user-select: none;
-  gap: 1.25rem;
-}
-
-.accordionHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.accordionTitle {
-  font-size: 1rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.5;
-  word-break: break-word;
-  text-align: left;
-}
-
-.orangeToggleBtn {
-  width: 30px;
-  height: 30px;
-  background-color: #ff6b35; /* Orange background matching Gambar 2 */
-  border: none;
-  color: #0d0d0f; /* Dark contrast icon matching Gambar 2 */
-  font-size: 1.1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 6px 6px 0px 6px; /* Top-left, top-right, bottom-left rounded, bottom-right sharp */
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  line-height: 1;
-  padding-bottom: 1px; /* slight adjustment for alignment */
-}
-
-.orangeToggleBtn:hover {
-  background-color: #ff8454;
-  transform: scale(1.05);
-}
-
-.orangeToggleBtnActive {
-  background-color: #ff6b35;
-}
-
-.accordionBody {
-  padding: 0 1.5rem 1.25rem 3.5rem; /* indented to align text instead of checkbox */
-  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
 }
 
 @keyframes slideDown {
