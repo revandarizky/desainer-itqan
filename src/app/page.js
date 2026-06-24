@@ -5,10 +5,20 @@ import styles from "./page.module.css";
 
 const renderFormattedText = (text, type) => {
   if (!text) return "-";
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  
+  // Clean up markdown formatting markers like **_text_** or ***text***
+  let cleanText = text
+    .replace(/\*\*_\s*/g, "**")
+    .replace(/\s*_\*\*/g, "**")
+    .replace(/\*\*\*\s*/g, "**")
+    .replace(/\s*\*\*\*/g, "**");
+
+  const parts = cleanText.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      const cleanPart = part.slice(2, -2);
+      let cleanPart = part.slice(2, -2);
+      // Strip any remaining leading/trailing underscores or asterisks
+      cleanPart = cleanPart.replace(/^[_*]+|[_*]+$/g, "");
       return (
         <span 
           key={i} 
@@ -18,9 +28,11 @@ const renderFormattedText = (text, type) => {
         </span>
       );
     }
-    return part;
+    // Clean any single underscores or asterisks used for italics/emphasis in the rest of the text
+    return part.replace(/_([^_]+)_/g, "$1").replace(/\*([^*]+)\*/g, "$1");
   });
 };
+
 
 export default function Home() {
   const [imageFile, setImageFile] = useState(null);
