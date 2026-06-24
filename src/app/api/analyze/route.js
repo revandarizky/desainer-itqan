@@ -5,12 +5,18 @@ export const maxDuration = 60; // Meningkatkan timeout Vercel Serverless menjadi
 export async function POST(request) {
   try {
     const formData = await request.formData();
-    const apiKey = formData.get('apiKey')?.trim();
+    let apiKey = formData.get('apiKey')?.trim();
+    if (!apiKey) {
+      apiKey = process.env.GEMINI_API_KEY;
+    }
     const imageFile = formData.get('image');
     const briefType = formData.get('briefType');
 
-    if (!apiKey || !imageFile) {
-      return Response.json({ error: 'API Key dan Gambar wajib diisi.' }, { status: 400 });
+    if (!apiKey) {
+      return Response.json({ error: 'API Key wajib diisi (masukkan di UI atau konfigurasikan di server).' }, { status: 400 });
+    }
+    if (!imageFile) {
+      return Response.json({ error: 'Gambar desain wajib diunggah.' }, { status: 400 });
     }
 
     const imageBuffer = await imageFile.arrayBuffer();
