@@ -12,7 +12,7 @@ const renderFormattedText = (text, type) => {
       return (
         <span 
           key={i} 
-          className={`${styles.serifItalic} ${type === 'desain' ? styles.highlightDesain : styles.highlightBrief}`}
+          className={type === 'desain' ? styles.highlightDesain : styles.highlightBrief}
         >
           {cleanPart}
         </span>
