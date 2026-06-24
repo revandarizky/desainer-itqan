@@ -10,12 +10,12 @@ const renderFormattedText = (text, type) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       const cleanPart = part.slice(2, -2);
       return (
-        <strong 
+        <span 
           key={i} 
-          className={type === 'desain' ? styles.highlightDesain : styles.highlightBrief}
+          className={`${styles.serifItalic} ${type === 'desain' ? styles.highlightDesain : styles.highlightBrief}`}
         >
           {cleanPart}
-        </strong>
+        </span>
       );
     }
     return part;
@@ -138,8 +138,20 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <header className={`${styles.header} animate-fade-in`}>
-        <h1 className={styles.title}>Desainer Itqan</h1>
-        <p className={styles.subtitle}>Pastikan output desain kamu 100% sesuai dengan brief awal.</p>
+        <h1 className={styles.title}>
+          Desainer <span className={styles.serifItalic}>Itqan</span>
+        </h1>
+        <p className={styles.subtitle}>
+          Pastikan hasil{" "}
+          <span className={styles.inlineThumbWrapper}>
+            <img src="/thumb1.png" alt="mockup" className={styles.inlineThumb} />
+          </span>{" "}
+          <span className={styles.serifItalic}>desain</span> kamu 100% sesuai dengan{" "}
+          <span className={styles.inlineThumbWrapper}>
+            <img src="/thumb2.png" alt="brief" className={styles.inlineThumb} />
+          </span>{" "}
+          <span className={styles.serifItalic}>brief</span> awal.
+        </p>
       </header>
 
       {errorMsg && (
@@ -266,8 +278,8 @@ export default function Home() {
               <div className={styles.spinner}></div>
               <p className={styles.loadingQuote}>
                 "Sesungguhnya Allah sangat mencintai orang yang jika <br />
-                melakukan suatu pekerjaan, ia melakukannya secara <br />
-                itqan (profesional, terarah, dan tuntas)." <br />
+                melakukan suatu <span className={styles.serifItalic}>pekerjaan</span>, ia melakukannya secara <br />
+                <span className={styles.serifItalic}>itqan</span> (profesional, terarah, dan tuntas)." <br />
                 <span className={styles.loadingQuoteSource}>(HR. Ath-Thabrani)</span>
               </p>
             </div>
