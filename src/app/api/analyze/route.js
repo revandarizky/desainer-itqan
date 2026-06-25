@@ -139,7 +139,11 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
 1. Jika poster dideteksi/dikategorikan sebagai Poster Kajian Rutin, pastikan nama Ustaz/Ustadzah yang tertera di poster COCOK dengan hari dan waktu pelaksanaan kajian tersebut berdasarkan basis data di atas.
 2. Jika tidak cocok (misal: kajian diadakan Senin Sore, tapi pematerinya tertulis Ustadz Ammi Nur Baits, yang seharusnya adalah Ustadz Afifi Abdul Wadud), laporkan temuan ini ke daftar "ketidaksesuaian" sebagai kesalahan jadwal pemateri.
 3. KHUSUS UNTUK SESI FLEKSIBEL (Senin Pagi, Kamis Pagi, dan Ahad Malam Pekan 4): Kamu TIDAK BOLEH mengoreksi atau menyalahkan nama Ustaz/Ustadzah yang tertulis pada poster (semua nama pemateri dianggap valid untuk sesi-sesi ini). Validasi pada sesi fleksibel hanya fokus pada kesesuaian hari/tanggal, jam, dan tema saja.
-4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
+4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".
+5. VALIDASI LOGO POSTER KAJIAN MPD:
+   - Setiap "Poster Kajian Rutin MPD" WAJIB memiliki Logo Masjid Pogung Dalangan (MPD) secara visual. Periksa gambar poster (biasanya di bagian header/footer/pojok). Jika tidak ada logo MPD, laporkan di daftar "ketidaksesuaian" dengan catatan: "Logo Masjid Pogung Dalangan (MPD) wajib disertakan pada poster kajian rutin."
+   - Jika kajian diadakan Senin Sore atau Kamis Sore (Kampus Takjil), poster tersebut WAJIB menyertakan Logo Kampus Takjil. Jika hilang/tidak ada, laporkan sebagai ketidaksesuaian.
+   - Jika kajian diadakan pada Ahad Malam pekan ke-4 (Tawhid Lecture), pastikan poster tersebut menyertakan Logo YPIA.`;
     }
 
     parts.push({ text: systemInstruction });
