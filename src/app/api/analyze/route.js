@@ -43,16 +43,18 @@ Aturan:
      * Ambiguitas visual font antara huruf kapital 'I' (i besar) dan huruf kecil 'l' (l kecil) (misal: "Ia kehendaki" vs "la kehendaki"). Karena pada font sans-serif kedua huruf ini terlihat identik sebagai garis vertikal tunggal, jangan laporkan perbedaan ini sebagai typo jika konteks kalimatnya merujuk pada kata "Ia". Ini adalah batasan visual font (homoglyphs) dan bukan typo desainer.
      * Variasi singkatan cakapan baku/informal yang umum digunakan dalam desain poster untuk efisiensi ruang (misal: "tetapi" ditulis "tapi", atau sebaliknya). Jangan laporkan hal ini sebagai ketidaksesuaian/typo.
 6. PENTING - DETEKSI TYPO UMUM & BATASAN KOREKSI: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain.
-   - PENTING (DILARANG KOREKSI TATA BAHASA): Fokus HANYA pada kesalahan ejaan kata (spelling/typo) secara individual (seperti 'rezki' harusnya 'rezeki'). DILARANG keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti 'dan', 'oleh', 'yang') jika ejaan kata-kata di poster sudah benar secara individual. 
+   - PENTING (DILARANG KOREKSI TATA BAHASA & KATA HUBUNG): Fokus HANYA pada kesalahan ejaan kata (spelling/typo) secara individual (seperti 'rezki' harusnya 'rezeki'). DILARANG keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti 'dan', 'oleh', 'yang', 'di', 'ke') jika ejaan kata-kata di poster secara individual sudah benar.
      * Contoh: Jika di poster tertulis "diterbangkan dibolak-balikkan angin" dan ejaan setiap kata sudah benar, kamu TIDAK BOLEH melaporkannya sebagai typo atau menyisipkan kata "dan" ("diterbangkan **dan** dibolak-balikkan"). Ini bukan typo, melainkan gaya penulisan kutipan/hadits asli.
+   - PENTING (DILARANG HALUSINASI TYPO / OCR ERROR): Jangan pernah melaporkan typo jika kata di gambar desain sebenarnya sudah tertulis secara baku/benar. Kamu harus sadar bahwa pembacaan OCR visual AI terkadang melewatkan huruf (misal: melewatkan huruf 'e' dalam kata "rezekinya" sehingga AI membacanya sebagai "rezkinya"). Verifikasi secara visual huruf demi huruf dengan sangat teliti! Jika pada gambar terlihat kata yang benar/baku (seperti "rezekinya" atau "rezeki"), DILARANG KERAS melaporkannya sebagai typo "rezkinya" / "rezki".
    - Tulis versi ejaan yang benar di kolom "di_brief" dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
 7. PENTING - KOORDINAT TYPO (VISUAL GROUNDING): Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual kata/teks yang salah ketik tersebut di dalam gambar poster desain dalam bentuk array 4 angka: [ymin, xmin, ymax, xmax] dengan skala 0 sampai 1000.
    - PENTING (CARA BERPIKIR SPASIAL & OCR): Jangan pernah menebak koordinat secara acak atau menempatkan kotak sorotan pada area ilustrasi gambar, foto manusia, logo, atau hiasan dekoratif.
      * Teks isi kajian pada poster-poster MPD umumnya berada di area tengah ke bawah (biasanya ymin > 500, misal di antara 600 sampai 900). Periksa letak teksnya dengan teliti.
      * Jika kata yang salah ketik berada di baris judul paling atas, maka ymin dan ymax harus bernilai kecil (di bawah 150, misal: [30, 100, 120, 500]).
      * Jika kata berada di bagian bawah poster (seperti kontak info atau lokasi), maka ymin dan ymax harus bernilai tinggi (di atas 700, misal: [750, 200, 800, 800]).
-     * Ukuran kotak pembatas harus proporsional untuk satu kata atau frasa pendek yang bermasalah saja (lebar xmax - xmin dan tinggi ymax - ymin harus kecil dan pas melingkari kata tersebut).
-   - PENTING - CAROUSEL (MULTI-IMAGE): Jika kamu menerima beberapa gambar desain sekaligus secara berurutan, gambar tersebut merupakan slide carousel. Untuk setiap temuan di daftar "ketidaksesuaian", kamu WAJIB mencantumkan properti "slide_index" berupa angka integer (dimulai dari 1 untuk slide pertama, 2 untuk slide kedua, dst.) untuk menunjuk ke halaman slide mana yang bermasalah.
+     * Ukuran kotak pembatas harus proporsional untuk satu kata or frasa pendek yang bermasalah saja (lebar xmax - xmin dan tinggi ymax - ymin harus kecil dan pas melingkari kata tersebut).
+     * AKURASI KOORDINAT: Sumbu Y berjalan dari atas (0) ke bawah (1000). Sumbu X berjalan dari kiri (0) ke kanan (1000). Koordinat harus melingkari kata yang typo secara sangat presisi pada slide yang bersangkutan. JANGAN PERNAH memberikan koordinat default jika kata tersebut berada di baris atas atau tengah.
+   - PENTING - CAROUSEL (MULTI-IMAGE): Jika kamu menerima beberapa gambar desain sekaligus secara berurutan, gambar tersebut merupakan slide carousel. Untuk setiap temuan di daftar "ketidaksesuaian", kamu WAJIB mencantumkan properti "slide_index" berupa angka integer (dimulai dari 1 untuk slide pertama, 2 untuk slide kedua, dst.) untuk menunjuk ke halaman slide mana yang bermasalah. Pastikan koordinat 'box_2d' diambil secara spesifik dari gambar pada 'slide_index' yang bersangkutan.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
    - Verifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026" padahal 25 Juni adalah Kamis), laporkan sebagai ketidaksesuaian.
@@ -204,13 +206,19 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
     if (!hasBrief) {
       userParts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
 Karena tidak ada brief referensi, tugas utama kamu adalah menganalisis seluruh teks di dalam poster gambar desain secara visual dan mendeteksi:
-1. Kesalahan ejaan, salah ketik (typo), atau ketidakbakuan kata dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn" atau "KajIatan", "Insya Allah" ditulis tidak sesuai KBBI/PUEBI, dll.).
+1. Kesalahan ejaan atau salah ketik (typo) secara individual dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn", atau "rezeki" ditulis "rezki").
 2. Keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal).
 3. Validasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).
 
+PENTING - ATURAN PENCEGAHAN TYPO PALSU & KOREKSI GRAMATIKAL:
+- Dilarang keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti "dan", "oleh", "yang", "di", "ke") jika ejaan masing-masing kata secara individual sudah benar.
+- Jangan melaporkan typo jika kata tersebut sebenarnya sudah ditulis secara baku/benar di gambar poster (misal: "rezekinya" atau "rezeki"). Berhati-hatilah dengan OCR visual dari pihakmu sendiri yang terkadang salah membaca atau melewatkan huruf (seperti melewatkan huruf 'e' pada kata "rezekinya" sehingga kamu mengiranya "rezkinya"). Verifikasi secara visual dengan sangat jeli! Jika pada gambar terlihat kata yang benar/baku, DILARANG KERAS melaporkannya sebagai typo.
+- Abaikan perbedaan visual homoglyph antara huruf kapital 'I' dan huruf kecil 'l' (seperti "Ia kehendaki" vs "la kehendaki"), jangan pernah laporkan ini sebagai typo.
+- Abaikan perbedaan huruf besar dan kecil (seperti "Surat" vs "surat").
+
 Setiap kali kamu menemukan typo atau salah penulisan kata:
 - Tulis versi penulisan yang baku/benar/direkomendasikan di properti "di_brief" (misal: "Kegiatan" atau "Masjid").
-- Tulis teks salah ketik yang tampil di gambar di properti "di_gambar" dengan tanda sorotan (**) (misal: "Kegiat**n**" atau "Masj**i**d").
+- Tulis teks salah ketik yang tampil di gambar di property "di_gambar" dengan tanda sorotan (**) (misal: "Kegiat**n**" or "Masj**i**d").
 - Jelaskan pembetulannya di properti "catatan".
 
 Periksa gambar desain berikut:` });
@@ -243,7 +251,7 @@ Periksa gambar desain berikut:` });
     let apiData;
     let attempts = 0;
     const maxAttempts = 3;
-    const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+    const models = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-pro"];
 
     while (attempts < maxAttempts) {
       const currentModel = models[attempts % models.length];
