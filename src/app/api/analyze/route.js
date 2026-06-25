@@ -45,9 +45,12 @@ Aturan:
 6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
    - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
    - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
-7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk array 4 angka: \`[ymin, xmin, ymax, xmax]\` pada skala 0 sampai 1000 (standar visual grounding Gemini, di mana 0 adalah atas/kiri dan 1000 adalah bawah/kanan).
+7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk array 4 angka: \`[ymin, xmin, ymax, xmax]\` pada skala 0 sampai 1000 (standar visual grounding Gemini, di mana 0 adalah paling atas/paling kiri, dan 1000 adalah paling bawah/paling kanan).
    - Simpan array ini pada properti "box_2d" di dalam objek ketidaksesuaian.
-   - Buat kotak penyorot (box) seakurat mungkin melingkari persis kata atau teks yang typo atau bermasalah tersebut.
+   - PENTING (CARA BERPIKIR SPASIAL): Sebelum menuliskan nilai \`box_2d\`, kamu harus memikirkan posisi teks tersebut secara spasial pada gambar:
+     * Jika teks bermasalah berada di baris judul paling atas poster (seperti kata "Regiatan" atau "KajIatan"), maka koordinat \`ymin\` dan \`ymax\` HARUS bernilai sangat kecil (di bawah 150, misal: \`[30, 100, 120, 500]\`). Jangan memberikan koordinat di area tengah atau bawah jika teksnya jelas berada di paling atas gambar.
+     * Jika teks berada di bagian bawah (seperti nama Ustaz atau info kontak), maka \`ymin\` dan \`ymax\` harus bernilai tinggi (di atas 700).
+     * Pastikan lebar (\`xmax - xmin\`) dan tinggi (\`ymax - ymin\`) kotak tersebut proporsional dan melingkari tepat pada kata yang salah tersebut.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
    - Verifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026" padahal 25 Juni adalah Kamis), laporkan sebagai ketidaksesuaian.
