@@ -60,6 +60,62 @@ const compressImageForHistory = (file) => {
   });
 };
 
+// Canvas Helper to compress image to high-quality JPEG for API upload (bypassing Vercel 4.5MB limit)
+const compressImageForUpload = (file) => {
+  return new Promise((resolve) => {
+    // If the file is not a client-side File object (e.g. mock or loaded history thumbnail), return it directly
+    if (!(file instanceof File)) {
+      resolve(file);
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_DIM = 1200; // Optimal width/height for Gemini visual parsing and text OCR
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = height * (MAX_DIM / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = width * (MAX_DIM / height);
+            height = MAX_DIM;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, "image/jpeg", 0.85); // 0.85 quality is extremely sharp but reduces size by 80-90%
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
 export default function Home() {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -151,7 +207,13 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      imageFiles.forEach(file => {
+      
+      // Compress files before uploading to bypass server size limits
+      const compressedFiles = await Promise.all(
+        imageFiles.map(file => compressImageForUpload(file))
+      );
+      
+      compressedFiles.forEach(file => {
         formData.append("image", file);
       });
       formData.append("briefType", activeTab);
