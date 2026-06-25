@@ -44,9 +44,9 @@ Aturan:
 6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
    - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
    - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
-7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk objek "koordinat" dengan format percentage (0-100) relatif terhadap dimensi gambar:
-   - "koordinat": { "x": <persentase_jarak_dari_kiri>, "y": <persentase_jarak_dari_atas>, "w": <persentase_lebar_kotak>, "h": <persentase_tinggi_kotak> }
-   - Angka berupa float/decimal antara 0.0 sampai 100.0. Buat seakurat mungkin agar kita bisa menggambar kotak penyorot tepat di atas tulisan typo tersebut.
+7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk array 4 angka: `[ymin, xmin, ymax, xmax]` pada skala 0 sampai 1000 (standar visual grounding Gemini, di mana 0 adalah atas/kiri dan 1000 adalah bawah/kanan).
+   - Simpan array ini pada properti "box_2d" di dalam objek ketidaksesuaian.
+   - Buat kotak penyorot (box) seakurat mungkin melingkari persis kata atau teks yang typo atau bermasalah tersebut.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
    - Verifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026" padahal 25 Juni adalah Kamis), laporkan sebagai ketidaksesuaian.
@@ -76,12 +76,7 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "di_brief": "Spesifikasi/teks yang tertulis di brief",
       "di_gambar": "Teks/visual yang tampil di gambar desain",
       "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
-      "koordinat": {
-        "x": 10.5,
-        "y": 25.0,
-        "w": 35.5,
-        "h": 5.0
-      }
+      "box_2d": [250, 105, 300, 460]
     }
   ],
   "aksesibilitas": [
@@ -286,6 +281,21 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
     let parsedResult;
     try {
       parsedResult = JSON.parse(resultText);
+      // Konversi box_2d [ymin, xmin, ymax, xmax] (0-1000) menjadi koordinat {x, y, w, h} (0-100) untuk frontend
+      if (parsedResult && Array.isArray(parsedResult.ketidaksesuaian)) {
+        parsedResult.ketidaksesuaian = parsedResult.ketidaksesuaian.map(item => {
+          if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length === 4) {
+            const [ymin, xmin, ymax, xmax] = item.box_2d.map(Number);
+            item.koordinat = {
+              x: xmin / 10,
+              y: ymin / 10,
+              w: (xmax - xmin) / 10,
+              h: (ymax - ymin) / 10
+            };
+          }
+          return item;
+        });
+      }
     } catch (e) {
       console.error("Failed to parse Gemini JSON output:", resultText);
       parsedResult = {
