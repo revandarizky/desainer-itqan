@@ -322,6 +322,7 @@ Periksa gambar desain berikut:` });
           return item;
         });
       }
+      parsedResult.hasBrief = hasBrief;
     } catch (e) {
       console.error("Failed to parse Gemini JSON output:", resultText);
       parsedResult = {

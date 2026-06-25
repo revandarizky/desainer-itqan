@@ -766,7 +766,9 @@ export default function Home() {
                                           Slide {item.slide_index}
                                         </span>
                                       )}
-                                      <span className={styles.compareLabelMini}>Brief</span>
+                                      <span className={styles.compareLabelMini}>
+                                        {results?.hasBrief !== false ? "Brief" : "Baku"}
+                                      </span>
                                     </div>
                                     
                                     {/* Copy text button */}
