@@ -16,6 +16,7 @@ export async function POST(request) {
     }
     const imageFile = formData.get('image');
     const briefType = formData.get('briefType');
+    const posterType = formData.get('posterType') || 'umum';
 
     if (!apiKey) {
       return Response.json({ error: 'API Key wajib diisi (masukkan di UI atau konfigurasikan di server).' }, { status: 400 });
@@ -31,7 +32,7 @@ export async function POST(request) {
     let briefContent = '';
     const parts = [];
 
-    const systemInstruction = `Kamu adalah "Strict Quality Control Inspector" profesional. 
+    let systemInstruction = `Kamu adalah "Strict Quality Control Inspector" profesional. 
 Tugas kamu adalah membandingkan output gambar desain terhadap spesifikasi di dalam "BRIEF DESAIN" yang diberikan.
 Fokus secara eksklusif pada kesesuaian isi antara brief dan output desain gambar.
 Aturan:
@@ -90,7 +91,56 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "saran": "Rekomendasi perbaikan warna/desain agar kontras lebih baik"
     }
   ]
-}`;
+} `;
+
+    if (posterType === 'kajian_rutin') {
+      systemInstruction += `\n\n10. PENTING - VALIDASI JADWAL USTADZ KAJIAN RUTIN MPD (MASJID POGUNG DALANGAN):
+Kamu wajib memvalidasi kecocokan nama Ustadz/Ustadzah, hari/waktu kajian, dan tema berdasarkan basis data internal jadwal kajian rutin Masjid Pogung Dalangan di bawah ini. Jika ada informasi di dalam gambar desain atau brief yang bertentangan atau tidak cocok dengan basis data ini, laporkan sebagai ketidaksesuaian:
+
+=== BASIS DATA JADWAL KAJIAN RUTIN MPD ===
+- Senin Pagi (09.00 - 11.00 WIB)
+  * Tema/Materi: Tematik Setiap Pekan
+  * Ustaz: Ustadz Pemateri PMJ
+- Senin Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
+  * Tema/Materi: Aqidah Dasar
+  * Ustaz: Ustadz Afifi Abdul Wadud, B.A.
+- Senin Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Fiqih Bermazhab (Pekan 1 & 2) & Tafsir Al-Qur'an (Pekan 3 & 4)
+  * Ustaz: Ustadz Ammi Nur Baits, S.T., B.A.
+- Selasa Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Hadits-Hadits Perbaikan Hati
+  * Ustaz: Ustadz Muhammad Rezki Hr, Ph.D.
+- Rabu Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Sunnah dan Dzikir Harian Nabi
+  * Ustaz: Ustadz Muhammad Romelan, Lc. M.Ag.
+- Kamis Pagi (09.00 - 11.00 WIB, Khusus Muslimah)
+  * Tema/Materi: Aqidah dan Fiqih Keluarga
+  * Ustadzah: Ustadzah Maryam Ummu Saffanah, M.HI.
+- Kamis Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
+  * Tema/Materi: Sirah Nabawiyah
+  * Ustaz: Ustadz Ir. Ristiyan Ragil P., S.T., M.T.
+- Kamis Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Riyadush Shalihin dan Fikih Syafi'i
+  * Ustaz: Ustadz Dr. M. Abduh Tuasikal, S.T., M.Sc.
+- Jumat Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Kajian Spesial Parenting
+  * Ustaz: Ustadz Erlan Iskandar, ST., M.Psi. ATAU Ustadz Sulaiman Rasyid (dua pemateri ini sama-sama valid/bergantian)
+- Sabtu Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Prinsip Aqidah Ahlussunnah
+  * Ustaz: Ustadz Yulian Purnama, S.Kom.
+- Ahad Malam:
+  * Jika Pekan 2 & 3:
+    - Tema/Materi: Sebab Tambah & Kurangnya Iman
+    - Ustaz: Ustadz Zaid Susanto, Lc.
+  * Jika Pekan 4:
+    - Tema/Materi: Tawhid Lecture
+    - Ustaz: Ustadz Pemateri YPIA
+
+ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
+1. Jika poster dideteksi/dikategorikan sebagai Poster Kajian Rutin, pastikan nama Ustaz/Ustadzah yang tertera di poster COCOK dengan hari dan waktu pelaksanaan kajian tersebut berdasarkan basis data di atas.
+2. Jika tidak cocok (misal: kajian diadakan Senin Sore, tapi pematerinya tertulis Ustadz Ammi Nur Baits, yang seharusnya adalah Ustadz Afifi Abdul Wadud), laporkan temuan ini ke daftar "ketidaksesuaian" sebagai kesalahan jadwal pemateri.
+3. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
+    }
 
     parts.push({ text: systemInstruction });
 
