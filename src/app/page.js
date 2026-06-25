@@ -142,21 +142,7 @@ export default function Home() {
       return;
     }
 
-    // Validation based on active tab (only enforce brief if it is a general poster type)
-    if (posterType !== 'kajian_rutin') {
-      if (activeTab === "text" && !briefText.trim()) {
-        setErrorMsg("Harap masukkan teks brief.");
-        return;
-      }
-      if (activeTab === "link" && !briefLink.trim()) {
-        setErrorMsg("Harap masukkan link Google Docs.");
-        return;
-      }
-      if (activeTab === "file" && !briefFile) {
-        setErrorMsg("Harap unggah file brief (PDF/Word).");
-        return;
-      }
-    }
+    // Brief is optional for all poster types. No validation required if empty.
 
     setErrorMsg("");
     setIsAnalyzing(true);
@@ -378,7 +364,7 @@ export default function Home() {
               <div className={`${styles.panel} ${styles.briefPanel} glass-panel`}>
                 <h2 className={styles.panelTitle}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                  Brief Referensi {posterType === 'kajian_rutin' && <span className={styles.optionalBadge}>(Opsional)</span>}
+                  Brief Referensi <span className={styles.optionalBadge}>(Opsional)</span>
                 </h2>
 
                 <div className={styles.posterTypeContainer}>

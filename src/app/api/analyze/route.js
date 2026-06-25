@@ -197,7 +197,18 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
     }
 
     if (!hasBrief) {
-      parts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan. Kamu wajib memverifikasi keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal) serta memvalidasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).\n\nPeriksa gambar desain berikut:` });
+      parts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
+Karena tidak ada brief referensi, tugas utama kamu adalah menganalisis seluruh teks di dalam poster gambar desain secara visual dan mendeteksi:
+1. Kesalahan ejaan, salah ketik (typo), atau ketidakbakuan kata dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn" atau "KajIatan", "Insya Allah" ditulis tidak sesuai KBBI/PUEBI, dll.).
+2. Keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal).
+3. Validasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).
+
+Setiap kali kamu menemukan typo atau salah penulisan kata:
+- Tulis versi penulisan yang baku/benar/direkomendasikan di properti "di_brief" (misal: "Kegiatan" atau "Masjid").
+- Tulis teks salah ketik yang tampil di gambar di properti "di_gambar" dengan tanda sorotan (**) (misal: "Kegiat**n**" atau "Masj**i**d").
+- Jelaskan pembetulannya di properti "catatan".
+
+Periksa gambar desain berikut:` });
     }
 
     // Add all Images to parts (for REST API it uses inline_data)
