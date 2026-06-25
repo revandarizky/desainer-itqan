@@ -100,7 +100,7 @@ Kamu wajib memvalidasi kecocokan nama Ustadz/Ustadzah, hari/waktu kajian, dan te
 === BASIS DATA JADWAL KAJIAN RUTIN MPD ===
 - Senin Pagi (09.00 - 11.00 WIB)
   * Tema/Materi: Tematik Setiap Pekan
-  * Ustaz: Ustadz Pemateri PMJ
+  * Ustaz: Fleksibel (Bisa siapa saja / Ustadz Pemateri PMJ)
 - Senin Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
   * Tema/Materi: Aqidah Dasar
   * Ustaz: Ustadz Afifi Abdul Wadud, B.A.
@@ -115,7 +115,7 @@ Kamu wajib memvalidasi kecocokan nama Ustadz/Ustadzah, hari/waktu kajian, dan te
   * Ustaz: Ustadz Muhammad Romelan, Lc. M.Ag.
 - Kamis Pagi (09.00 - 11.00 WIB, Khusus Muslimah)
   * Tema/Materi: Aqidah dan Fiqih Keluarga
-  * Ustadzah: Ustadzah Maryam Ummu Saffanah, M.HI.
+  * Ustadzah: Fleksibel (Bisa siapa saja / Ustadzah Maryam Ummu Saffanah, M.HI.)
 - Kamis Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
   * Tema/Materi: Sirah Nabawiyah
   * Ustaz: Ustadz Ir. Ristiyan Ragil P., S.T., M.T.
@@ -134,12 +134,13 @@ Kamu wajib memvalidasi kecocokan nama Ustadz/Ustadzah, hari/waktu kajian, dan te
     - Ustaz: Ustadz Zaid Susanto, Lc.
   * Jika Pekan 4:
     - Tema/Materi: Tawhid Lecture
-    - Ustaz: Ustadz Pemateri YPIA
+    - Ustaz: Fleksibel (Bisa siapa saja / Ustadz Pemateri YPIA)
 
 ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
 1. Jika poster dideteksi/dikategorikan sebagai Poster Kajian Rutin, pastikan nama Ustaz/Ustadzah yang tertera di poster COCOK dengan hari dan waktu pelaksanaan kajian tersebut berdasarkan basis data di atas.
 2. Jika tidak cocok (misal: kajian diadakan Senin Sore, tapi pematerinya tertulis Ustadz Ammi Nur Baits, yang seharusnya adalah Ustadz Afifi Abdul Wadud), laporkan temuan ini ke daftar "ketidaksesuaian" sebagai kesalahan jadwal pemateri.
-3. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
+3. KHUSUS UNTUK SESI FLEKSIBEL (Senin Pagi, Kamis Pagi, dan Ahad Malam Pekan 4): Kamu TIDAK BOLEH mengoreksi atau menyalahkan nama Ustaz/Ustadzah yang tertulis pada poster (semua nama pemateri dianggap valid untuk sesi-sesi ini). Validasi pada sesi fleksibel hanya fokus pada kesesuaian hari/tanggal, jam, dan tema saja.
+4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
     }
 
     parts.push({ text: systemInstruction });
