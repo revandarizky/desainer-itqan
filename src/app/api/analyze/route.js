@@ -37,8 +37,12 @@ Aturan:
 3. Jika ada elemen yang diwajibkan di brief TAPI hilang di gambar, masukkan ke list ketidaksesuaian.
 4. Jangan memberikan komentar di luar konteks kecocokan (seperti opini warna kurang bagus dsb).
 5. PENTING: Di dalam nilai "di_brief" dan "di_gambar", tandai kata/karakter/angka yang berbeda atau salah ketik dengan membungkusnya menggunakan bintang ganda (**), misalnya: "di_brief": "Kajian Aqidah **Dasar**" dan "di_gambar": "Kajian Aqidah **Daser**". Ini wajib dilakukan agar sistem diff highlighter dapat berfungsi.
-   - PENGECUALIAN: Perbedaan penulisan kata "dan" dengan simbol "&" (atau sebaliknya) dianggap sama/setara. Kamu TIDAK BOLEH memasukkan perbedaan "dan" vs "&" sebagai temuan ketidaksesuaian atau revisi.
-6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
+   - PENGECUALIAN & TOLERANSI:
+     * Perbedaan penulisan kata "dan" dengan simbol "&" (atau sebaliknya) dianggap sama/setara. Kamu TIDAK BOLEH memasukkan perbedaan "dan" vs "&" sebagai temuan.
+     * Perbedaan huruf besar dan huruf kecil (kapitalisasi) (misal: "Surat" vs "surat", "Ia" vs "ia") dianggap sama. Jangan laporkan sebagai ketidaksesuaian/revisi.
+     * Ambiguitas visual font antara huruf kapital 'I' (i besar) dan huruf kecil 'l' (l kecil) (misal: "Ia kehendaki" vs "la kehendaki"). Karena pada font sans-serif kedua huruf ini terlihat identik sebagai garis vertikal, jangan laporkan perbedaan ini sebagai typo jika konteks kalimatnya merujuk pada kata "Ia".
+     * Variasi singkatan cakapan baku/informal yang umum digunakan dalam desain poster untuk efisiensi ruang (misal: "tetapi" ditulis "tapi", atau sebaliknya). Jangan laporkan hal ini sebagai ketidaksesuaian/typo.
+6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
    - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
    - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
 7. PENTING - KOORDINAT TYPO (VISUAL GROUNDING): Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual kata/teks yang salah ketik tersebut di dalam gambar poster desain dalam bentuk array 4 angka: [ymin, xmin, ymax, xmax] dengan skala 0 sampai 1000.
