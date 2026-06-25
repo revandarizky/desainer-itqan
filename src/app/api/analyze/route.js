@@ -41,12 +41,12 @@ Aturan:
 6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
    - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
    - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
-7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk array 4 angka: \`[ymin, xmin, ymax, xmax]\` pada skala 0 sampai 1000 (standar visual grounding Gemini, di mana 0 adalah paling atas/paling kiri, dan 1000 adalah paling bawah/paling kanan).
-   - Simpan array ini pada properti "box_2d" di dalam objek ketidaksesuaian.
-   - PENTING (CARA BERPIKIR SPASIAL): Sebelum menuliskan nilai \`box_2d\`, kamu harus memikirkan posisi teks tersebut secara spasial pada gambar:
-     * Jika teks bermasalah berada di baris judul paling atas poster (seperti kata "Regiatan" atau "KajIatan"), maka koordinat \`ymin\` dan \`ymax\` HARUS bernilai sangat kecil (di bawah 150, misal: \`[30, 100, 120, 500]\`). Jangan memberikan koordinat di area tengah atau bawah jika teksnya jelas berada di paling atas gambar.
-     * Jika teks berada di bagian bawah (seperti nama Ustaz atau info kontak), maka \`ymin\` dan \`ymax\` harus bernilai tinggi (di atas 700).
-     * Pastikan lebar (\`xmax - xmin\`) dan tinggi (\`ymax - ymin\`) kotak tersebut proporsional dan melingkari tepat pada kata yang salah tersebut.
+7. PENTING - KOORDINAT TYPO (VISUAL GROUNDING): Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual kata/teks yang salah ketik tersebut di dalam gambar poster desain dalam bentuk array 4 angka: [ymin, xmin, ymax, xmax] dengan skala 0 sampai 1000.
+   - PENTING (CARA BERPIKIR SPASIAL & OCR): Jangan pernah menebak koordinat secara acak atau menempatkan kotak sorotan pada area ilustrasi gambar, foto manusia, logo, atau hiasan dekoratif.
+     * Teks isi kajian pada poster-poster MPD umumnya berada di area tengah ke bawah (biasanya ymin > 500, misal di antara 600 sampai 900). Periksa letak teksnya dengan teliti.
+     * Jika kata yang salah ketik berada di baris judul paling atas, maka ymin dan ymax harus bernilai kecil (di bawah 150, misal: [30, 100, 120, 500]).
+     * Jika kata berada di bagian bawah poster (seperti kontak info atau lokasi), maka ymin dan ymax harus bernilai tinggi (di atas 700, misal: [750, 200, 800, 800]).
+     * Ukuran kotak pembatas harus proporsional untuk satu kata atau frasa pendek yang bermasalah saja (lebar xmax - xmin dan tinggi ymax - ymin harus kecil dan pas melingkari kata tersebut).
    - PENTING - CAROUSEL (MULTI-IMAGE): Jika kamu menerima beberapa gambar desain sekaligus secara berurutan, gambar tersebut merupakan slide carousel. Untuk setiap temuan di daftar "ketidaksesuaian", kamu WAJIB mencantumkan properti "slide_index" berupa angka integer (dimulai dari 1 untuk slide pertama, 2 untuk slide kedua, dst.) untuk menunjuk ke halaman slide mana yang bermasalah.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
@@ -77,7 +77,7 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "di_brief": "Spesifikasi/teks yang tertulis di brief",
       "di_gambar": "Teks/visual yang tampil di gambar desain",
       "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
-      "box_2d": [250, 105, 300, 460],
+      "box_2d": [750, 200, 780, 480],
       "slide_index": 1
     }
   ],
@@ -140,15 +140,15 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
 4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
     }
 
-    parts.push({ text: systemInstruction });
-
     let hasBrief = false;
+    const userParts = [];
+
     if (briefType === 'text') {
       const textVal = formData.get('briefText')?.trim();
       if (textVal) {
         briefContent = textVal;
         hasBrief = true;
-        parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+        userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
       }
     } 
     else if (briefType === 'link') {
@@ -164,7 +164,7 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
           }
           briefContent = await res.text();
           hasBrief = true;
-          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
         } else {
           throw new Error('Link Google Docs tidak valid. Harap sertakan URL dokumen yang benar.');
         }
@@ -184,20 +184,20 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
           const pdfData = await parser.getText();
           briefContent = pdfData.text;
           hasBrief = true;
-          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
         } else if (file.name.toLowerCase().endsWith('.docx')) {
           const result = await mammoth.extractRawText({ buffer: Buffer.from(fileBuffer) });
           briefContent = result.value;
           hasBrief = true;
-          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
         } else {
-          throw new Error('Format file tidak didukung. Harap unggah .pdf atau .docx');
+          throw new Error('Format file tidak didukung. Harap unggah .pdf or .docx');
         }
       }
     }
 
     if (!hasBrief) {
-      parts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
+      userParts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
 Karena tidak ada brief referensi, tugas utama kamu adalah menganalisis seluruh teks di dalam poster gambar desain secara visual dan mendeteksi:
 1. Kesalahan ejaan, salah ketik (typo), atau ketidakbakuan kata dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn" atau "KajIatan", "Insya Allah" ditulis tidak sesuai KBBI/PUEBI, dll.).
 2. Keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal).
@@ -211,12 +211,12 @@ Setiap kali kamu menemukan typo atau salah penulisan kata:
 Periksa gambar desain berikut:` });
     }
 
-    // Add all Images to parts (for REST API it uses inline_data)
+    // Add all Images to userParts
     for (const imgFile of imageFiles) {
       const imgBuffer = await imgFile.arrayBuffer();
       const imgBase64 = Buffer.from(imgBuffer).toString('base64');
       const imgMimeType = imgFile.type;
-      parts.push({
+      userParts.push({
         inline_data: {
           mime_type: imgMimeType,
           data: imgBase64
@@ -225,7 +225,10 @@ Periksa gambar desain berikut:` });
     }
 
     const requestBody = {
-      contents: [{ parts: parts }],
+      system_instruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      contents: [{ parts: userParts }],
       generationConfig: {
         responseMimeType: "application/json"
       }
