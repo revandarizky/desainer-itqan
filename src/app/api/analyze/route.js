@@ -47,6 +47,11 @@ Aturan:
    - "koordinat": { "x": <persentase_jarak_dari_kiri>, "y": <persentase_jarak_dari_atas>, "w": <persentase_lebar_kotak>, "h": <persentase_tinggi_kotak> }
    - Angka berupa float/decimal antara 0.0 sampai 100.0. Buat seakurat mungkin agar kita bisa menggambar kotak penyorot tepat di atas tulisan typo tersebut.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
+9. PENTING - VALIDASI LOGIKA KALENDER NYATA: Kamu wajib memverifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026"), periksa apakah tanggal 25 Juni 2026 benar-benar jatuh pada hari Rabu. Jika tidak cocok (misal 25 Juni 2026 aslinya adalah hari Kamis), kamu WAJIB melaporkan ini sebagai temuan di daftar "ketidaksesuaian" sebagai kesalahan logika tanggal, meskipun penulisan salah tersebut tertulis sama persis di brief dan di gambar poster.
+   - Contoh output:
+     "di_brief": "Kamis, 25 Juni 2026 (koreksi logika kalender brief: **Rabu**, 25 Juni 2026)",
+     "di_gambar": "**Rabu**, 25 Juni 2026",
+     "catatan": "Terdapat ketidaksesuaian logika kalender. Tanggal 25 Juni 2026 jatuh pada hari Kamis, bukan hari Rabu. Harap perbaiki penulisan hari di gambar desain menjadi Kamis."
 
 Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
 {
