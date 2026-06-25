@@ -999,6 +999,55 @@ textarea::-webkit-scrollbar-thumb:hover, .tabContent::-webkit-scrollbar-thumb:ho
   gap: 0.75rem;
 }
 
+/* Celebration Card when all revisions are checked */
+.celebrationCard {
+  background: #F0FDFA;
+  border: 2px solid #0D5C56;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 16px rgba(13, 92, 86, 0.08);
+}
+
+.celebrationIcon {
+  font-size: 2.25rem;
+  animation: bounceCelebration 1.2s ease infinite alternate;
+  user-select: none;
+}
+
+@keyframes bounceCelebration {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-4px) scale(1.05); }
+}
+
+.celebrationContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.celebrationTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0D5C56;
+  margin: 0;
+}
+
+.celebrationText {
+  font-size: 0.9rem;
+  color: #064E3B;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.celebrationText strong {
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .grid,
   .resultsGrid {

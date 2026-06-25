@@ -256,6 +256,12 @@ export default function Home() {
 
   const viewState = isAnalyzing ? 'loading' : results ? 'result' : 'input';
 
+  const openRevisionsCount = results?.ketidaksesuaian 
+    ? results.ketidaksesuaian.length - Object.keys(checkedMismatches).filter(k => checkedMismatches[k]).length 
+    : 0;
+  const hasMismatchesInitially = results?.ketidaksesuaian && results.ketidaksesuaian.length > 0;
+  const isReadyToPublish = openRevisionsCount === 0;
+
   return (
     <main className={styles.main}>
       <header className={`${styles.header} animate-fade-in`}>
@@ -530,8 +536,8 @@ export default function Home() {
 
               {typeof results === 'object' && !results.error && (
                 <div className={styles.summaryBar}>
-                  <div className={results.ketidaksesuaian?.length > 0 ? styles.summaryStatusBadgeError : styles.summaryStatusBadgeSuccess}>
-                    {results.ketidaksesuaian?.length > 0 ? '⚠️ Butuh Revisi' : '✅ Siap Publikasi'}
+                  <div className={isReadyToPublish ? styles.summaryStatusBadgeSuccess : styles.summaryStatusBadgeError}>
+                    {isReadyToPublish ? '✅ Siap Publikasi' : '⚠️ Butuh Revisi'}
                   </div>
                   <div className={styles.summaryMetrics}>
                     <div className={styles.metricItem}>
@@ -541,8 +547,8 @@ export default function Home() {
                     <div className={styles.metricDivider}></div>
                     <div className={styles.metricItem}>
                       <span className={styles.metricLabel}>Revisi Terbuka:</span>
-                      <span className={styles.metricValue} style={{ color: results.ketidaksesuaian?.length > 0 ? '#b91c1c' : 'inherit' }}>
-                        {results.ketidaksesuaian?.length ? results.ketidaksesuaian.length - Object.keys(checkedMismatches).filter(k => checkedMismatches[k]).length : 0}
+                      <span className={styles.metricValue} style={{ color: openRevisionsCount > 0 ? '#b91c1c' : 'inherit' }}>
+                        {openRevisionsCount}
                       </span>
                     </div>
                     <div className={styles.metricDivider}></div>
@@ -550,6 +556,18 @@ export default function Home() {
                       <span className={styles.metricLabel}>Sesuai Brief:</span>
                       <span className={styles.metricValue} style={{ color: '#0d5c56' }}>{results.sesuai?.length || 0}</span>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {hasMismatchesInitially && isReadyToPublish && (
+                <div className={`${styles.celebrationCard} animate-fade-in`}>
+                  <div className={styles.celebrationIcon}>🎉</div>
+                  <div className={styles.celebrationContent}>
+                    <h4 className={styles.celebrationTitle}>Luar Biasa! Semua Revisi Selesai Diperiksa</h4>
+                    <p className={styles.celebrationText}>
+                      Seluruh catatan perbaikan telah Anda beri tanda selesai. Poster desain kini <strong>sudah siap publish!</strong>
+                    </p>
                   </div>
                 </div>
               )}
