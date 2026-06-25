@@ -144,47 +144,62 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
 
     parts.push({ text: systemInstruction });
 
+    let hasBrief = false;
     if (briefType === 'text') {
-      briefContent = formData.get('briefText');
-      parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+      const textVal = formData.get('briefText')?.trim();
+      if (textVal) {
+        briefContent = textVal;
+        hasBrief = true;
+        parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+      }
     } 
     else if (briefType === 'link') {
-      const link = formData.get('briefLink');
-      const match = link.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (match && match[1]) {
-        const docId = match[1];
-        const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-        const res = await fetch(exportUrl);
-        if (!res.ok) {
-          throw new Error('Gagal mengakses link Google Docs. Pastikan link diset "Anyone with the link can view".');
+      const link = formData.get('briefLink')?.trim();
+      if (link) {
+        const match = link.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+          const docId = match[1];
+          const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+          const res = await fetch(exportUrl);
+          if (!res.ok) {
+            throw new Error('Gagal mengakses link Google Docs. Pastikan link diset "Anyone with the link can view".');
+          }
+          briefContent = await res.text();
+          hasBrief = true;
+          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+        } else {
+          throw new Error('Link Google Docs tidak valid. Harap sertakan URL dokumen yang benar.');
         }
-        briefContent = await res.text();
-        parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-      } else {
-        throw new Error('Link Google Docs tidak valid. Harap sertakan URL dokumen yang benar.');
       }
     } 
     else if (briefType === 'file') {
       const file = formData.get('briefFile');
-      if (!file) throw new Error('File brief tidak ditemukan.');
-      const fileBuffer = await file.arrayBuffer();
-      
-      if (file.name.toLowerCase().endsWith('.pdf')) {
-        if (typeof global.DOMMatrix === 'undefined') {
-          global.DOMMatrix = class DOMMatrix {};
+      if (file && file.size > 0) {
+        const fileBuffer = await file.arrayBuffer();
+        
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          if (typeof global.DOMMatrix === 'undefined') {
+            global.DOMMatrix = class DOMMatrix {};
+          }
+          const { PDFParse } = await import('pdf-parse');
+          const parser = new PDFParse({ data: Buffer.from(fileBuffer) });
+          const pdfData = await parser.getText();
+          briefContent = pdfData.text;
+          hasBrief = true;
+          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+        } else if (file.name.toLowerCase().endsWith('.docx')) {
+          const result = await mammoth.extractRawText({ buffer: Buffer.from(fileBuffer) });
+          briefContent = result.value;
+          hasBrief = true;
+          parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+        } else {
+          throw new Error('Format file tidak didukung. Harap unggah .pdf atau .docx');
         }
-        const { PDFParse } = await import('pdf-parse');
-        const parser = new PDFParse({ data: Buffer.from(fileBuffer) });
-        const pdfData = await parser.getText();
-        briefContent = pdfData.text;
-        parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-      } else if (file.name.toLowerCase().endsWith('.docx')) {
-        const result = await mammoth.extractRawText({ buffer: Buffer.from(fileBuffer) });
-        briefContent = result.value;
-        parts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-      } else {
-        throw new Error('Format file tidak didukung. Harap unggah .pdf atau .docx');
       }
+    }
+
+    if (!hasBrief) {
+      parts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan. Kamu wajib memverifikasi keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal) serta memvalidasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).\n\nPeriksa gambar desain berikut:` });
     }
 
     // Add Image to parts (for REST API it uses inline_data)

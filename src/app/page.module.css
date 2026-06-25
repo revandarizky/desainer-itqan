@@ -246,6 +246,18 @@
   box-shadow: 0 0 0 3px rgba(139, 125, 102, 0.15);
 }
 
+.optionalBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #777777;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  margin-left: auto;
+  letter-spacing: normal;
+  text-transform: uppercase;
+}
+
 .tab {
   flex: 1;
   padding: 0.6rem 1rem;
