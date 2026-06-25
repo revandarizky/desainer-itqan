@@ -14,20 +14,16 @@ export async function POST(request) {
       console.log("DEBUG BACKEND - process.env.GEMINI_API_KEY length:", process.env.GEMINI_API_KEY.length);
       console.log("DEBUG BACKEND - process.env.GEMINI_API_KEY prefix:", process.env.GEMINI_API_KEY.substring(0, 8));
     }
-    const imageFile = formData.get('image');
+    const imageFiles = formData.getAll('image');
     const briefType = formData.get('briefType');
     const posterType = formData.get('posterType') || 'umum';
 
     if (!apiKey) {
       return Response.json({ error: 'API Key wajib diisi (masukkan di UI atau konfigurasikan di server).' }, { status: 400 });
     }
-    if (!imageFile) {
+    if (!imageFiles || imageFiles.length === 0) {
       return Response.json({ error: 'Gambar desain wajib diunggah.' }, { status: 400 });
     }
-
-    const imageBuffer = await imageFile.arrayBuffer();
-    const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-    const imageMimeType = imageFile.type;
 
     let briefContent = '';
     const parts = [];
@@ -51,6 +47,7 @@ Aturan:
      * Jika teks bermasalah berada di baris judul paling atas poster (seperti kata "Regiatan" atau "KajIatan"), maka koordinat \`ymin\` dan \`ymax\` HARUS bernilai sangat kecil (di bawah 150, misal: \`[30, 100, 120, 500]\`). Jangan memberikan koordinat di area tengah atau bawah jika teksnya jelas berada di paling atas gambar.
      * Jika teks berada di bagian bawah (seperti nama Ustaz atau info kontak), maka \`ymin\` dan \`ymax\` harus bernilai tinggi (di atas 700).
      * Pastikan lebar (\`xmax - xmin\`) dan tinggi (\`ymax - ymin\`) kotak tersebut proporsional dan melingkari tepat pada kata yang salah tersebut.
+   - PENTING - CAROUSEL (MULTI-IMAGE): Jika kamu menerima beberapa gambar desain sekaligus secara berurutan, gambar tersebut merupakan slide carousel. Untuk setiap temuan di daftar "ketidaksesuaian", kamu WAJIB mencantumkan properti "slide_index" berupa angka integer (dimulai dari 1 untuk slide pertama, 2 untuk slide kedua, dst.) untuk menunjuk ke halaman slide mana yang bermasalah.
 8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
    - Verifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026" padahal 25 Juni adalah Kamis), laporkan sebagai ketidaksesuaian.
@@ -80,7 +77,8 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "di_brief": "Spesifikasi/teks yang tertulis di brief",
       "di_gambar": "Teks/visual yang tampil di gambar desain",
       "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
-      "box_2d": [250, 105, 300, 460]
+      "box_2d": [250, 105, 300, 460],
+      "slide_index": 1
     }
   ],
   "aksesibilitas": [
@@ -202,13 +200,18 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
       parts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan. Kamu wajib memverifikasi keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal) serta memvalidasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).\n\nPeriksa gambar desain berikut:` });
     }
 
-    // Add Image to parts (for REST API it uses inline_data)
-    parts.push({
-      inline_data: {
-        mime_type: imageMimeType,
-        data: imageBase64
-      }
-    });
+    // Add all Images to parts (for REST API it uses inline_data)
+    for (const imgFile of imageFiles) {
+      const imgBuffer = await imgFile.arrayBuffer();
+      const imgBase64 = Buffer.from(imgBuffer).toString('base64');
+      const imgMimeType = imgFile.type;
+      parts.push({
+        inline_data: {
+          mime_type: imgMimeType,
+          data: imgBase64
+        }
+      });
+    }
 
     const requestBody = {
       contents: [{ parts: parts }],
@@ -288,6 +291,7 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
       // Konversi box_2d [ymin, xmin, ymax, xmax] (0-1000) menjadi koordinat {x, y, w, h} (0-100) untuk frontend
       if (parsedResult && Array.isArray(parsedResult.ketidaksesuaian)) {
         parsedResult.ketidaksesuaian = parsedResult.ketidaksesuaian.map(item => {
+          item.slide_index = Number(item.slide_index) || 1;
           if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length === 4) {
             const [ymin, xmin, ymax, xmax] = item.box_2d.map(Number);
             item.koordinat = {

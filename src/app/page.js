@@ -61,8 +61,9 @@ const compressImageForHistory = (file) => {
 };
 
 export default function Home() {
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   
   const [activeTab, setActiveTab] = useState("text"); // text, link, file
   const [briefText, setBriefText] = useState("");
@@ -100,8 +101,8 @@ export default function Home() {
       const item = e.clipboardData?.items[0];
       if (item && item.type.startsWith("image/")) {
         const file = item.getAsFile();
-        setImageFile(file);
-        setImagePreview(URL.createObjectURL(file));
+        setImageFiles(prev => [...prev, file]);
+        setImagePreviews(prev => [...prev, URL.createObjectURL(file)]);
         setResults(null);
       }
     };
@@ -111,12 +112,21 @@ export default function Home() {
 
   const handleImageDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer?.files[0] || e.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setResults(null);
+    const files = e.dataTransfer?.files || e.target.files;
+    if (files && files.length > 0) {
+      const validFiles = Array.from(files).filter(file => file.type.startsWith("image/"));
+      if (validFiles.length > 0) {
+        setImageFiles(prev => [...prev, ...validFiles]);
+        const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+        setResults(null);
+      }
     }
+  };
+
+  const handleRemoveImage = (idx) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== idx));
+    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleBriefFileChange = (e) => {
@@ -127,7 +137,7 @@ export default function Home() {
   };
 
   const handleAnalyze = async () => {
-    if (!imageFile) {
+    if (imageFiles.length === 0) {
       setErrorMsg("Harap unggah gambar desain terlebih dahulu.");
       return;
     }
@@ -155,7 +165,9 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append("image", imageFile);
+      imageFiles.forEach(file => {
+        formData.append("image", file);
+      });
       formData.append("briefType", activeTab);
       formData.append("posterType", posterType);
 
@@ -182,7 +194,9 @@ export default function Home() {
 
       // Save to local history list
       try {
-        const compressedThumb = await compressImageForHistory(imageFile);
+        const compressedThumbs = await Promise.all(
+          imageFiles.map(file => compressImageForHistory(file))
+        );
         
         const briefTitle = activeTab === "text" 
           ? (briefText.trim().substring(0, 30) || "Brief Teks") 
@@ -201,7 +215,8 @@ export default function Home() {
           }),
           title: briefTitle,
           results: data.result,
-          thumbnail: compressedThumb,
+          thumbnails: compressedThumbs,
+          thumbnail: compressedThumbs[0],
           metrics: {
             totalErrors: data.result?.ketidaksesuaian?.length || 0,
             totalSuccess: data.result?.sesuai?.length || 0
@@ -238,8 +253,9 @@ export default function Home() {
 
   const handleLoadHistoryItem = (item) => {
     setResults(item.results);
-    setImagePreview(item.thumbnail); // Load compressed thumbnail image
-    setImageFile(null); // Clear file upload so it uses the cached thumbnail
+    setImagePreviews(item.thumbnails || [item.thumbnail]);
+    setImageFiles([]); // Clear file upload so it uses the cached thumbnails
+    setCurrentSlideIndex(0);
     setCheckedMismatches({});
     setErrorMsg("");
   };
@@ -297,7 +313,7 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <div className={`${styles.grid} animate-fade-in`}>
               {/* Left Column: Image Upload & Config */}
-              {!imagePreview ? (
+              {imagePreviews.length === 0 ? (
                 <div 
                   className={`${styles.panel} ${styles.dropzonePanel} glass-panel`} 
                   onDragOver={(e) => e.preventDefault()}
@@ -312,15 +328,49 @@ export default function Home() {
                     ref={fileInputRef} 
                     onChange={handleImageDrop} 
                     accept="image/*" 
+                    multiple
                     style={{display: 'none'}} 
                   />
                 </div>
               ) : (
                 <div className={`${styles.panel} glass-panel`} style={{ padding: '1.5rem' }}>
-                  <div className={styles.imagePreview}>
-                    <button className={styles.removeImage} onClick={() => {setImagePreview(null); setImageFile(null);}}>✕</button>
-                    <img src={imagePreview} alt="Preview" />
+                  <h3 className={styles.panelTitle} style={{ borderBottom: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
+                    Gambar Desain ({imagePreviews.length} Slide)
+                  </h3>
+                  <div className={styles.thumbnailGrid}>
+                    {imagePreviews.map((preview, idx) => (
+                      <div key={idx} className={styles.thumbnailItem}>
+                        <img src={preview} alt={`Slide ${idx + 1}`} />
+                        <span className={styles.thumbnailIndex}>Slide {idx + 1}</span>
+                        <button 
+                          className={styles.thumbnailRemove} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveImage(idx);
+                          }}
+                          title="Hapus slide ini"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <div 
+                      className={styles.thumbnailAddButton} 
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Tambah slide baru"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      <span>Tambah Slide</span>
+                    </div>
                   </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleImageDrop} 
+                    accept="image/*" 
+                    multiple
+                    style={{display: 'none'}} 
+                  />
                 </div>
               )}
 
@@ -491,30 +541,60 @@ export default function Home() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 Visual Desain & Temuan
               </h3>
-              {imagePreview ? (
-                <div className={styles.imageOverlayContainer}>
-                  <img src={imagePreview} alt="Analisis Gambar" className={styles.analyzedImage} />
+              {imagePreviews && imagePreviews.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className={styles.imageOverlayContainer}>
+                    <img 
+                      src={imagePreviews[currentSlideIndex]} 
+                      alt={`Analisis Gambar Slide ${currentSlideIndex + 1}`} 
+                      className={styles.analyzedImage} 
+                    />
+                    
+                    {/* Bounding box overlays */}
+                    {results.ketidaksesuaian?.map((item, idx) => {
+                      if (item.slide_index !== currentSlideIndex + 1) return null;
+                      if (checkedMismatches[idx] || !item.koordinat) return null;
+                      const { x, y, w, h } = item.koordinat;
+                      const isHovered = hoveredMismatchIdx === idx;
+                      return (
+                        <div 
+                          key={idx}
+                          className={`${styles.boundingBoxOverlay} ${isHovered ? styles.boundingBoxOverlayHovered : ''}`}
+                          style={{
+                            left: `${x}%`,
+                            top: `${y}%`,
+                            width: `${w}%`,
+                            height: `${h}%`
+                          }}
+                        >
+                          <span className={styles.boundingBoxBadge}>{idx + 1}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                   
-                  {/* Bounding box overlays */}
-                  {results.ketidaksesuaian?.map((item, idx) => {
-                    if (checkedMismatches[idx] || !item.koordinat) return null;
-                    const { x, y, w, h } = item.koordinat;
-                    const isHovered = hoveredMismatchIdx === idx;
-                    return (
-                      <div 
-                        key={idx}
-                        className={`${styles.boundingBoxOverlay} ${isHovered ? styles.boundingBoxOverlayHovered : ''}`}
-                        style={{
-                          left: `${x}%`,
-                          top: `${y}%`,
-                          width: `${w}%`,
-                          height: `${h}%`
-                        }}
+                  {/* Carousel Controls */}
+                  {imagePreviews.length > 1 && (
+                    <div className={styles.carouselControls}>
+                      <button 
+                        className={styles.carouselButton} 
+                        onClick={() => setCurrentSlideIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentSlideIndex === 0}
                       >
-                        <span className={styles.boundingBoxBadge}>{idx + 1}</span>
-                      </div>
-                    );
-                  })}
+                        ◀ Prev
+                      </button>
+                      <span className={styles.carouselIndicatorText}>
+                        Slide {currentSlideIndex + 1} dari {imagePreviews.length}
+                      </span>
+                      <button 
+                        className={styles.carouselButton} 
+                        onClick={() => setCurrentSlideIndex(prev => Math.min(imagePreviews.length - 1, prev + 1))}
+                        disabled={currentSlideIndex === imagePreviews.length - 1}
+                      >
+                        Next ▶
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(0,0,0,0.4)' }}>
@@ -543,8 +623,9 @@ export default function Home() {
                     className={`${styles.backButton} no-print`} 
                     onClick={() => {
                       setResults(null);
-                      setImagePreview(null);
-                      setImageFile(null);
+                      setImagePreviews([]);
+                      setImageFiles([]);
+                      setCurrentSlideIndex(0);
                       setErrorMsg("");
                     }}
                   >
@@ -610,7 +691,12 @@ export default function Home() {
                             <div 
                               key={idx} 
                               className={`${styles.mismatchItem} ${isChecked ? styles.mismatchItemChecked : ''}`}
-                              onMouseEnter={() => setHoveredMismatchIdx(idx)}
+                              onMouseEnter={() => {
+                                setHoveredMismatchIdx(idx);
+                                if (item.slide_index) {
+                                  setCurrentSlideIndex(item.slide_index - 1);
+                                }
+                              }}
                               onMouseLeave={() => setHoveredMismatchIdx(null)}
                             >
                               <input 
@@ -625,6 +711,11 @@ export default function Home() {
                               <div className={styles.mismatchCompareRow}>
                                 <div className={styles.mismatchBriefBox}>
                                   <span className={styles.mismatchIndexBadge}>{idx + 1}</span>
+                                  {item.slide_index && (
+                                    <span className={styles.slideBadge}>
+                                      Slide {item.slide_index}
+                                    </span>
+                                  )}
                                   <span className={styles.compareLabelMini}>Brief</span>
                                   <span className={styles.compareText}>
                                     {renderFormattedText(item.di_brief, 'brief')}
