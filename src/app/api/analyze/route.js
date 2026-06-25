@@ -40,6 +40,13 @@ Aturan:
 3. Jika ada elemen yang diwajibkan di brief TAPI hilang di gambar, masukkan ke list ketidaksesuaian.
 4. Jangan memberikan komentar di luar konteks kecocokan (seperti opini warna kurang bagus dsb).
 5. PENTING: Di dalam nilai "di_brief" dan "di_gambar", tandai kata/karakter/angka yang berbeda atau salah ketik dengan membungkusnya menggunakan bintang ganda (**), misalnya: "di_brief": "Buka Puasa Tasu'a **dan** Asyura" dan "di_gambar": "Buka Puasa Tasu'a **&** Asyura". Ini wajib dilakukan agar sistem diff highlighter dapat berfungsi.
+6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
+   - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
+   - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
+   - Contoh: Jika di brief tertulis "jngan lewatkan" dan di gambar tertulis "jngan lewatkan", maka kamu kembalikan:
+     "di_brief": "Jangan lewatkan (koreksi typo brief: **jngan**)",
+     "di_gambar": "**jngan** lewatkan",
+     "catatan": "Terdapat typo ejaan umum pada kata 'jngan' yang seharusnya ditulis 'Jangan'. Meskipun di brief juga terdapat typo, penulisan di gambar desain sebaiknya diperbaiki menggunakan ejaan bahasa Indonesia yang benar."
 
 Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
 {
