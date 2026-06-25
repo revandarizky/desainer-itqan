@@ -143,3 +143,93 @@ textarea::placeholder, input::placeholder {
   font-weight: 800 !important;
 }
 
+/* @media print styles for exporting a clean PDF report */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-family: sans-serif !important;
+  }
+  
+  header,
+  footer,
+  button,
+  input[type="checkbox"],
+  .no-print,
+  [class*="backButton"],
+  [class*="tabs"],
+  [class*="tab"],
+  [class*="removeImage"],
+  [class*="briefPanel"],
+  [class*="mismatchCheckbox"] {
+    display: none !important;
+  }
+  
+  main {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  [class*="resultsGrid"] {
+    display: block !important;
+  }
+  
+  [class*="stickyImagePanel"] {
+    position: relative !important;
+    top: 0 !important;
+    max-height: none !important;
+    page-break-after: always;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin-bottom: 2rem !important;
+  }
+  
+  [class*="imageOverlayContainer"] {
+    max-width: 400px !important;
+    margin: 0 auto !important;
+  }
+
+  [class*="resultsPanel"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  
+  [class*="mismatchItem"] {
+    page-break-inside: avoid;
+    border-bottom: 1px solid #E5E7EB !important;
+  }
+  
+  [class*="mismatchBriefBox"] {
+    background: #F9FAFB !important;
+    border: 1px solid #D1D5DB !important;
+  }
+  
+  [class*="mismatchDesainBox"] {
+    background: #FEF2F2 !important;
+    border: 1px solid #FCA5A5 !important;
+  }
+  
+  [class*="highlightBrief"] {
+    background: #E5E7EB !important;
+    border-color: #9CA3AF !important;
+  }
+  
+  [class*="highlightDesain"] {
+    background: #FEE2E2 !important;
+    border-color: #F87171 !important;
+  }
+
+  [class*="qcSection"], [class*="summaryBar"] {
+    page-break-inside: avoid;
+  }
+}
+
+

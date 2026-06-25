@@ -43,10 +43,10 @@ Aturan:
 6. PENTING - DETEKSI TYPO UMUM: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", "saja" tertulis "sja", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain. 
    - Jika terdapat typo umum yang tertulis di brief dan diikuti oleh desain, kamu WAJIB memasukkannya ke dalam daftar "ketidaksesuaian".
    - Tulis versi ejaan yang benar di kolom "di_brief" (serta sebutkan ejaan aslinya dari brief) dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
-   - Contoh: Jika di brief tertulis "jngan lewatkan" dan di gambar tertulis "jngan lewatkan", maka kamu kembalikan:
-     "di_brief": "Jangan lewatkan (koreksi typo brief: **jngan**)",
-     "di_gambar": "**jngan** lewatkan",
-     "catatan": "Terdapat typo ejaan umum pada kata 'jngan' yang seharusnya ditulis 'Jangan'. Meskipun di brief juga terdapat typo, penulisan di gambar desain sebaiknya diperbaiki menggunakan ejaan bahasa Indonesia yang benar."
+7. PENTING - KOORDINAT TYPO: Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual teks yang bermasalah di dalam gambar poster desain dalam bentuk objek "koordinat" dengan format percentage (0-100) relatif terhadap dimensi gambar:
+   - "koordinat": { "x": <persentase_jarak_dari_kiri>, "y": <persentase_jarak_dari_atas>, "w": <persentase_lebar_kotak>, "h": <persentase_tinggi_kotak> }
+   - Angka berupa float/decimal antara 0.0 sampai 100.0. Buat seakurat mungkin agar kita bisa menggambar kotak penyorot tepat di atas tulisan typo tersebut.
+8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
 
 Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
 {
@@ -61,7 +61,20 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "elemen": "Nama elemen/kategori (misal: Judul, Waktu, Typo)",
       "di_brief": "Spesifikasi/teks yang tertulis di brief",
       "di_gambar": "Teks/visual yang tampil di gambar desain",
-      "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya"
+      "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
+      "koordinat": {
+        "x": 10.5,
+        "y": 25.0,
+        "w": 35.5,
+        "h": 5.0
+      }
+    }
+  ],
+  "aksesibilitas": [
+    {
+      "elemen": "Nama elemen visual (misal: Teks Tanggal, Background Poster)",
+      "temuan": "Penjelasan masalah kontras warna atau keterbacaan teks",
+      "saran": "Rekomendasi perbaikan warna/desain agar kontras lebih baik"
     }
   ]
 }`;
