@@ -804,6 +804,28 @@ Periksa gambar desain berikut:` });
       {errorMsg && (
         <div className={`${styles.errorBox} animate-fade-in`}>
           <strong>Error:</strong> {errorMsg}
+          {errorMsg.includes("Pengaturan") && (
+            <button 
+              onClick={() => setShowSettings(true)}
+              style={{
+                display: 'block',
+                marginTop: '0.75rem',
+                background: '#991B1B',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#7F1D1D'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#991B1B'}
+            >
+              ⚙️ Buka Pengaturan API
+            </button>
+          )}
         </div>
       )}
 
