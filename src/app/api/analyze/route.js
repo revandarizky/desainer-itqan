@@ -253,7 +253,7 @@ Periksa gambar desain berikut:` });
     let apiData;
     let attempts = 0;
     const maxAttempts = 3;
-    const models = ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-pro"];
+    const models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-pro"];
 
     while (attempts < maxAttempts) {
       const currentModel = models[attempts % models.length];

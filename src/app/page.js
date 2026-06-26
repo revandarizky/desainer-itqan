@@ -238,7 +238,18 @@ export default function Home() {
         body: formData,
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textText = await response.text();
+        console.error("Non-JSON response received:", textText);
+        if (response.status === 504 || response.status === 544 || textText.toLowerCase().includes("timeout") || textText.toLowerCase().includes("limit")) {
+          throw new Error("Analisis terputus karena server timeout (batas waktu 10 detik di Vercel Free). Silakan coba lagi dengan jumlah slide lebih sedikit, atau pastikan ukuran gambar lebih kecil.");
+        }
+        throw new Error(`Terjadi kesalahan server (HTTP ${response.status}). Silakan coba beberapa saat lagi.`);
+      }
       
       if (!response.ok) {
         throw new Error(data.error || "Gagal menganalisis gambar.");
