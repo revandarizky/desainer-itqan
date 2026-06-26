@@ -1435,3 +1435,118 @@ textarea::-webkit-scrollbar-thumb:hover, .tabContent::-webkit-scrollbar-thumb:ho
   from { transform: translateY(-100%); }
   to { transform: translateY(0); }
 }
+
+/* Settings Panel Styles */
+.headerTopRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.settingsToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #4B5563;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.settingsToggle:hover {
+  background: #FAF9F5;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #111111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.settingsPanel {
+  max-width: 600px;
+  margin: 0 auto 2rem auto;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  background: #FFFFFF;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  text-align: left;
+}
+
+.settingsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #FAF9F5;
+}
+
+.settingsTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.closeSettingsBtn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.closeSettingsBtn:hover {
+  color: #111111;
+}
+
+.settingsBody {
+  padding: 1.5rem;
+}
+
+.settingsDesc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #4B5563;
+  margin-bottom: 1.25rem;
+}
+
+.settingsLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111111;
+  display: block;
+}
+
+.clearApiKeyBtn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #000000 !important;
+}
+
+/* Responsive adjustment for header settings button */
+@media (max-width: 768px) {
+  .headerTopRow {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .settingsToggle {
+    position: static;
+    transform: none;
+  }
+}

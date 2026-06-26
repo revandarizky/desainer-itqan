@@ -116,6 +116,143 @@ const compressImageForUpload = (file) => {
   });
 };
 
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+const getSystemInstruction = (posterType) => {
+  let instruction = `Kamu adalah "Strict Quality Control Inspector" profesional. 
+Tugas kamu adalah membandingkan output gambar desain terhadap spesifikasi di dalam "BRIEF DESAIN" yang diberikan.
+Fokus secara eksklusif pada kesesuaian isi antara brief dan output desain gambar.
+Aturan:
+1. Periksa Typo (salah ketik) pada teks yang ada di gambar dengan mencocokkannya dengan teks di brief.
+2. Periksa kesesuaian informasi (misal: tanggal, harga, nama acara).
+3. Jika ada elemen yang diwajibkan di brief TAPI hilang di gambar, masukkan ke list ketidaksesuaian.
+4. Jangan memberikan komentar di luar konteks kecocokan (seperti opini warna kurang bagus dsb).
+5. PENTING: Di dalam nilai "di_brief" dan "di_gambar", tandai kata/karakter/angka yang berbeda atau salah ketik dengan membungkusnya menggunakan bintang ganda (**), misalnya: "di_brief": "Kajian Aqidah **Dasar**" dan "di_gambar": "Kajian Aqidah **Daser**". Ini wajib dilakukan agar sistem diff highlighter dapat berfungsi.
+   - PENGECUALIAN & TOLERANSI:
+     * Perbedaan penulisan kata "dan" dengan simbol "&" (atau sebaliknya) dianggap sama/setara. Kamu TIDAK BOLEH memasukkan perbedaan "dan" vs "&" sebagai temuan.
+     * Perbedaan huruf besar dan huruf kecil (kapitalisasi) (misal: "Surat" vs "surat", "Ia" vs "ia") dianggap sama. Jangan laporkan sebagai ketidaksesuaian/revisi.
+     * Ambiguitas visual font antara huruf kapital 'I' (i besar) dan huruf kecil 'l' (l kecil) (misal: "Ia kehendaki" vs "la kehendaki"). Karena pada font sans-serif kedua huruf ini terlihat identik sebagai garis vertikal tunggal, jangan laporkan perbedaan ini sebagai typo jika konteks kalimatnya merujuk pada kata "Ia". Ini adalah batasan visual font (homoglyphs) dan bukan typo desainer.
+     * Variasi singkatan cakapan baku/informal yang umum digunakan dalam desain poster untuk efisiensi ruang (misal: "tetapi" ditulis "tapi", atau sebaliknya). Jangan laporkan hal ini sebagai ketidaksesuaian/typo.
+6. PENTING - DETEKSI TYPO UMUM & BATASAN KOREKSI: Kamu juga harus mendeteksi kesalahan ejaan atau typo umum (seperti singkatan tidak baku: "jngan", "dgn", "yg", atau salah ketik huruf biasa) SEKALI PUN typo tersebut berasal dari teks di brief yang kemudian disalin sama persis ke gambar desain.
+   - PENTING (DILARANG KOREKSI TATA BAHASA & KATA HUBUNG): Fokus HANYA pada kesalahan ejaan kata (spelling/typo) secara individual (seperti 'rezki' harusnya 'rezeki'). DILARANG keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti 'dan', 'oleh', 'yang', 'di', 'ke') jika ejaan kata-kata di poster secara individual sudah benar.
+     * Contoh: Jika di poster tertulis "diterbangkan dibolak-balikkan angin" dan ejaan setiap kata sudah benar, kamu TIDAK BOLEH melaporkannya sebagai typo atau menyisipkan kata "dan" ("diterbangkan **dan** dibolak-balikkan"). Ini bukan typo, melainkan gaya penulisan kutipan/hadits asli.
+   - PENTING (DILARANG HALUSINASI TYPO / OCR ERROR): Jangan pernah melaporkan typo jika kata di gambar desain sebenarnya sudah tertulis secara baku/benar. Kamu harus sadar bahwa pembacaan OCR visual AI terkadang melewatkan huruf (misal: melewatkan huruf 'e' dalam kata "rezekinya" sehingga AI membacanya sebagai "rezkinya"). Verifikasi secara visual huruf demi huruf dengan sangat teliti! Jika pada gambar terlihat kata yang benar/baku (seperti "rezekinya" atau "rezeki"), DILARANG KERAS melaporkannya sebagai typo "rezkinya" / "rezki".
+    - Tulis versi ejaan yang benar di kolom "di_brief" dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
+    - Kamu wajib menambahkan properti "lokasi_deskriptif" (string) pada setiap objek temuan "ketidaksesuaian". Kunci ini diisi penjelasan bahasa manusia yang singkat dan jelas mengenai di mana letak teks tersebut pada gambar desain (misalnya: "Di bawah judul utama, dekat daun hijau", "Di dalam baris info tanggal masehi/hijriah", "Di bagian paling bawah dekat kontak whatsapp"). Ini berfungsi sebagai pemandu alternatif jika koordinat box meleset.
+7. PENTING - KOORDINAT TYPO (VISUAL GROUNDING): Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual kata/teks yang salah ketik tersebut di dalam gambar poster desain dalam bentuk array 4 angka: [ymin, xmin, ymax, xmax] dengan skala 0 sampai 1000.
+   - PENTING (CARA BERPIKIR SPASIAL & OCR): Jangan pernah menebak koordinat secara acak atau menempatkan kotak sorotan pada area ilustrasi gambar, foto manusia, logo, atau hiasan dekoratif.
+     * Teks isi kajian pada poster-poster MPD umumnya berada di area tengah ke bawah (biasanya ymin > 500, misal di antara 600 sampai 900). Periksa letak teksnya dengan teliti.
+     * Jika kata yang salah ketik berada di baris judul paling atas, maka ymin dan ymax harus bernilai kecil (di bawah 150, misal: [30, 100, 120, 500]).
+     * Jika kata berada di bagian bawah poster (seperti kontak info atau lokasi), maka ymin dan ymax harus bernilai tinggi (di atas 700, misal: [750, 200, 800, 800]).
+     * Ukuran kotak pembatas harus proporsional untuk satu kata or frasa pendek yang bermasalah saja (lebar xmax - xmin dan tinggi ymax - ymin harus kecil dan pas melingkari kata tersebut).
+     * AKURASI KOORDINAT: Sumbu Y berjalan dari atas (0) ke bawah (1000). Sumbu X berjalan dari kiri (0) ke kanan (1000). Koordinat harus melingkari kata yang typo secara sangat presisi pada slide yang bersangkutan. JANGAN PERNAH memberikan koordinat default jika kata tersebut berada di baris atas atau tengah.
+   - PENTING - CAROUSEL (MULTI-IMAGE): Jika kamu menerima beberapa gambar desain sekaligus secara berurutan, gambar tersebut merupakan slide carousel. Untuk setiap temuan di daftar "ketidaksesuaian", kamu WAJIB mencantumkan properti "slide_index" berupa angka integer (dimulai dari 1 untuk slide pertama, 2 untuk slide kedua, dst.) untuk menunjuk ke halaman slide mana yang bermasalah. Pastikan koordinat 'box_2d' diambil secara spesifik dari gambar pada 'slide_index' yang bersangkutan.
+8. PENTING - ANALISIS AKSESIBILITAS: Periksa juga keterbacaan poster (misal: warna teks kuning di atas background putih, kontras warna yang buruk, teks terlalu kecil, atau gambar latar belakang yang menutupi tulisan). Masukkan temuan aksesibilitas ini ke dalam properti "aksesibilitas".
+9. PENTING - VALIDASI LOGIKA KALENDER DAN KONSISTENSI HARI: 
+   - Verifikasi kecocokan nama hari dengan tanggalnya berdasarkan kalender nyata di kehidupan nyata (real calendar logic). Jika tertulis nama hari dan tanggal (misal: "Rabu, 25 Juni 2026" padahal 25 Juni adalah Kamis), laporkan sebagai ketidaksesuaian.
+   - Verifikasi konsistensi antara judul/tema acara di gambar/brief (misal: "Jadwal Kajian Hari Kamis") dengan tanggal pelaksanaan yang tertera (misal: "Rabu, 24 Juni 2026"). Jika tanggal 24 Juni 2026 benar jatuh pada hari Rabu tetapi judulnya menyebutkan "Kamis", laporkan ketidaksinkronan ini agar pengguna tahu ada ketidakcocokan antara judul hari dengan tanggalnya.
+   - Verifikasi kecocokan penanggalan Hijriah (terutama bulan Muharram) terhadap penanggalan Masehi menggunakan acuan standar Kalender Hijriah Global Tunggal (KHGT) Muhammadiyah. Untuk tahun 1448 H / 2026 M, acuannya adalah: 
+     * 1 Muharram 1448 H = Selasa, 16 Juni 2026 M
+     * Puasa Tasu'a (9 Muharram 1448 H) = Rabu, 24 Juni 2026 M
+     * Puasa Asyura (10 Muharram 1448 H) = Kamis, 25 Juni 2026 M
+     Jika poster menuliskan penanggalan Hijriah atau hari puasa sunnah Muharram dengan hari/tanggal Masehi yang tidak cocok menurut KHGT Muhammadiyah, laporkan sebagai ketidaksesuaian penanggalan Hijriah.
+   - Laporkan temuan ini di daftar "ketidaksesuaian" meskipun kesalahan tersebut tertulis sama persis di brief dan gambar poster.
+   - Contoh output:
+     "di_brief": "Kajian Hari **Kamis** (detail tanggal **Rabu**, 24 Juni 2026)",
+     "di_gambar": "Jadwal Kajian Hari **Kamis**, **24** Juni 2026",
+     "catatan": "Terdapat ketidaksinkronan informasi. Judul menyebutkan 'Hari Kamis', namun tanggal yang tertera (24 Juni 2026) jatuh pada hari Rabu. Harap selaraskan apakah judulnya yang harus diubah ke Rabu atau tanggalnya yang disesuaikan."
+
+Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
+{
+  "sesuai": [
+    {
+      "elemen": "Nama elemen/kategori (misal: Tempat, Waktu, Fasilitas, Logo)",
+      "deskripsi": "Detail penjelasan kesesuaian"
+    }
+  ],
+  "ketidaksesuaian": [
+    {
+      "elemen": "Nama elemen/kategori (misal: Judul, Waktu, Typo)",
+      "di_brief": "Spesifikasi/teks yang tertulis di brief",
+      "di_gambar": "Teks/visual yang tampil di gambar desain",
+      "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
+      "lokasi_deskriptif": "Petunjuk letak teks di gambar (misal: 'Di bawah judul utama', 'Di baris kedua info waktu')",
+      "box_2d": [750, 200, 780, 480],
+      "slide_index": 1
+    }
+  ],
+  "aksesibilitas": [
+    {
+      "elemen": "Nama elemen visual (misal: Teks Tanggal, Background Poster)",
+      "temuan": "Penjelasan masalah kontras warna atau keterbacaan teks",
+      "saran": "Rekomendasi perbaikan warna/desain agar kontras lebih baik"
+    }
+  ]
+}`;
+
+  if (posterType === 'kajian_rutin') {
+    instruction += `\n\n10. PENTING - VALIDASI JADWAL USTADZ KAJIAN RUTIN MPD (MASJID POGUNG DALANGAN):
+Kamu wajib memvalidasi kecocokan nama Ustadz/Ustadzah, hari/waktu kajian, dan tema berdasarkan basis data internal jadwal kajian rutin Masjid Pogung Dalangan di bawah ini. Jika ada informasi di dalam gambar desain atau brief yang bertentangan atau tidak cocok dengan basis data ini, laporkan sebagai ketidaksesuaian:
+
+=== BASIS DATA JADWAL KAJIAN RUTIN MPD ===
+- Senin Pagi (09.00 - 11.00 WIB)
+  * Tema/Materi: Tematik Setiap Pekan
+  * Ustaz: Fleksibel (Bisa siapa saja / Ustadz Pemateri PMJ)
+- Senin Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
+  * Tema/Materi: Aqidah Dasar
+  * Ustaz: Ustadz Afifi Abdul Wadud, B.A.
+- Senin Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Fiqih Bermazhab (Pekan 1 & 2) & Tafsir Al-Qur'an (Pekan 3 & 4)
+  * Ustaz: Ustadz Ammi Nur Baits, S.T., B.A.
+- Selasa Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Hadits-Hadits Perbaikan Hati
+  * Ustaz: Ustadz Muhammad Rezki Hr, Ph.D.
+- Rabu Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Sunnah dan Dzikir Harian Nabi
+  * Ustaz: Ustadz Muhammad Romelan, Lc. M.Ag.
+- Kamis Pagi (09.00 - 11.00 WIB, Khusus Muslimah)
+  * Tema/Materi: Aqidah dan Fiqih Keluarga
+  * Ustadzah: Fleksibel (Bisa siapa saja / Ustadzah Maryam Ummu Saffanah, M.HI.)
+- Kamis Sore (16.30 - Menjelang Maghrib, Kampus Takjil)
+  * Tema/Materi: Sirah Nabawiyah
+  * Ustaz: Ustadz Ir. Ristiyan Ragil P., S.T., M.T.
+- Kamis Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Riyadush Shalihin dan Fikih Syafi'i
+  * Ustaz: Ustadz Dr. M. Abduh Tuasikal, S.T., M.Sc.
+- Jumat Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Kajian Spesial Parenting
+  * Ustaz: Ustadz Erlan Iskandar, ST., M.Psi. ATAU Ustadz Sulaiman Rasyid (dua pemateri ini sama-sama valid/bergantian)
+- Sabtu Malam (Ba'da Maghrib - Selesai)
+  * Tema/Materi: Prinsip Aqidah Ahlussunnah
+  * Ustaz: Ustadz Yulian Purnama, S.Kom.
+- Ahad Malam:
+  * Jika Pekan 2 & 3:
+    - Tema/Materi: Sebab Tambah & Kurangnya Iman
+    - Ustaz: Ustadz Zaid Susanto, Lc.
+  * Jika Pekan 4:
+    - Tema/Materi: Tawhid Lecture
+    - Ustaz: Fleksibel (Bisa siapa saja / Ustadz Pemateri YPIA)
+
+ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
+1. Jika poster dideteksi/dikategorikan sebagai Poster Kajian Rutin, pastikan nama Ustaz/Ustadzah yang tertera di poster COCOK dengan hari dan waktu pelaksanaan kajian tersebut berdasarkan basis data di atas.
+2. Jika tidak cocok (misal: kajian diadakan Senin Sore, tapi pematerinya tertulis Ustadz Ammi Nur Baits, yang seharusnya adalah Ustadz Afifi Abdul Wadud), laporkan temuan ini ke daftar "ketidaksesuaian" sebagai kesalahan jadwal pemateri.
+3. KHUSUS UNTUK SESI FLEKSIBEL (Senin Pagi, Kamis Pagi, dan Ahad Malam Pekan 4): Kamu TIDAK BOLEH mengoreksi atau menyalahkan nama Ustaz/Ustadzah yang tertulis pada poster (semua nama pemateri dianggap valid untuk sesi-sesi ini). Validasi pada sesi fleksibel hanya fokus pada kesesuaian hari/tanggal, jam, dan tema saja.
+4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
+  }
+
+  return instruction;
+};
+
 export default function Home() {
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -137,6 +274,9 @@ export default function Home() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [history, setHistory] = useState([]);
 
+  const [userApiKey, setUserApiKey] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+
   // Manual Box Refiner States
   const [editingCoordsIdx, setEditingCoordsIdx] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -146,15 +286,19 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const briefFileInputRef = useRef(null);
 
-  // Load history on mount
+  // Load configuration and history on mount
   useEffect(() => {
     try {
+      const savedKey = localStorage.getItem("qc_gemini_api_key");
+      if (savedKey) {
+        setUserApiKey(savedKey);
+      }
       const savedHistory = localStorage.getItem("qc_history");
       if (savedHistory) {
         setHistory(JSON.parse(savedHistory));
       }
     } catch (e) {
-      console.error("Failed to load local storage history:", e);
+      console.error("Failed to load local storage configurations:", e);
     }
   }, []);
 
@@ -197,14 +341,11 @@ export default function Home() {
       setBriefFile(file);
     }
   };
-
   const handleAnalyze = async () => {
     if (imageFiles.length === 0) {
       setErrorMsg("Harap unggah gambar desain terlebih dahulu.");
       return;
     }
-
-    // Brief is optional for all poster types. No validation required if empty.
 
     setErrorMsg("");
     setIsAnalyzing(true);
@@ -212,62 +353,210 @@ export default function Home() {
     setCheckedMismatches({});
 
     try {
-      const formData = new FormData();
-      
       // Compress files before uploading to bypass server size limits
       const compressedFiles = await Promise.all(
         imageFiles.map(file => compressImageForUpload(file))
       );
-      
-      compressedFiles.forEach(file => {
-        formData.append("image", file);
-      });
-      formData.append("briefType", activeTab);
-      formData.append("posterType", posterType);
 
-      if (activeTab === "text") {
-        formData.append("briefText", briefText);
-      } else if (activeTab === "link") {
-        formData.append("briefLink", briefLink);
-      } else if (activeTab === "file") {
-        formData.append("briefFile", briefFile);
-      }
+      let finalResult;
+      let hasBriefText = false;
+      let briefTitle = "";
 
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      let data;
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const textText = await response.text();
-        console.error("Non-JSON response received:", textText);
-        if (response.status === 504 || response.status === 544 || textText.toLowerCase().includes("timeout") || textText.toLowerCase().includes("limit")) {
-          throw new Error("Analisis terputus karena server timeout (batas waktu 10 detik di Vercel Free). Silakan coba lagi dengan jumlah slide lebih sedikit, atau pastikan ukuran gambar lebih kecil.");
+      if (userApiKey && userApiKey.trim()) {
+        // --- PATH 1: Direct Client-Side Fetch (Bypass Vercel Timeout) ---
+        console.log("Using direct client-side fetch with user-provided Gemini API Key...");
+        
+        let briefContent = "";
+        
+        if (activeTab === "text") {
+          briefContent = briefText.trim();
+          hasBriefText = !!briefContent;
+          briefTitle = briefContent.substring(0, 30) || "Brief Teks";
+        } else if (activeTab === "link") {
+          briefTitle = briefLink.substring(0, 30) || "Google Docs Link";
+          if (briefLink.trim()) {
+            const parseFormData = new FormData();
+            parseFormData.append("briefType", "link");
+            parseFormData.append("briefLink", briefLink);
+            
+            const parseRes = await fetch("/api/parse-brief", {
+              method: "POST",
+              body: parseFormData,
+            });
+            if (!parseRes.ok) {
+              const parseData = await parseRes.json().catch(() => ({}));
+              throw new Error(parseData.error || "Gagal mengurai link Google Docs di server.");
+            }
+            const parseData = await parseRes.json();
+            briefContent = parseData.text;
+            hasBriefText = !!briefContent.trim();
+          }
+        } else if (activeTab === "file") {
+          briefTitle = briefFile?.name || "Brief File";
+          if (briefFile) {
+            const parseFormData = new FormData();
+            parseFormData.append("briefType", "file");
+            parseFormData.append("briefFile", briefFile);
+            
+            const parseRes = await fetch("/api/parse-brief", {
+              method: "POST",
+              body: parseFormData,
+            });
+            if (!parseRes.ok) {
+              const parseData = await parseRes.json().catch(() => ({}));
+              throw new Error(parseData.error || "Gagal mengurai file brief di server.");
+            }
+            const parseData = await parseRes.json();
+            briefContent = parseData.text;
+            hasBriefText = !!briefContent.trim();
+          }
         }
-        throw new Error(`Terjadi kesalahan server (HTTP ${response.status}). Silakan coba beberapa saat lagi.`);
-      }
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Gagal menganalisis gambar.");
+
+        const userParts = [];
+        if (hasBriefText) {
+          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
+        } else {
+          userParts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
+Karena tidak ada brief referensi, tugas utama kamu adalah menganalisis seluruh teks di dalam poster gambar desain secara visual dan mendeteksi:
+1. Kesalahan ejaan atau salah ketik (typo) secara individual dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn", atau "rezeki" ditulis "rezki").
+2. Keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal).
+3. Validasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).
+
+PENTING - ATURAN PENCEGAHAN TYPO PALSU & KOREKSI GRAMATIKAL:
+- Dilarang keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti "dan", "oleh", "yang", "di", "ke") jika ejaan masing-masing kata secara individual sudah benar.
+- Jangan melaporkan typo jika kata tersebut sebenarnya sudah ditulis secara baku/benar di gambar poster (misal: "rezekinya" atau "rezeki"). Berhati-hatilah dengan OCR visual dari pihakmu sendiri yang terkadang salah membaca atau melewatkan huruf (seperti melewatkan huruf 'e' pada kata "rezekinya" sehingga kamu mengiranya "rezkinya"). Verifikasi secara visual dengan sangat jeli! Jika pada gambar terlihat kata yang benar/baku, DILARANG KERAS melaporkannya sebagai typo.
+- Abaikan perbedaan visual homoglyph antara huruf kapital 'I' dan huruf kecil 'l' (seperti "Ia kehendaki" vs "la kehendaki"), jangan pernah laporkan ini sebagai typo.
+- Abaikan perbedaan huruf besar dan kecil (seperti "Surat" vs "surat").
+
+Setiap kali kamu menemukan typo atau salah penulisan kata:
+- Tulis versi penulisan yang baku/benar/direkomendasikan di properti "di_brief" (misal: "Kegiatan" atau "Masjid").
+- Tulis teks salah ketik yang tampil di gambar di property "di_gambar" dengan tanda sorotan (**) (misal: "Kegiat**n**" or "Masj**i**d").
+- Jelaskan pembetulannya di properti "catatan".
+
+Periksa gambar desain berikut:` });
+        }
+
+        // Add all base64 images to userParts
+        for (const file of compressedFiles) {
+          const imgBase64 = await fileToBase64(file);
+          userParts.push({
+            inline_data: {
+              mime_type: file.type,
+              data: imgBase64
+            }
+          });
+        }
+
+        const systemInstruction = getSystemInstruction(posterType);
+
+        const requestBody = {
+          system_instruction: {
+            parts: [{ text: systemInstruction }]
+          },
+          contents: [{ parts: userParts }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        };
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error?.message || `HTTP ${response.status} ${response.statusText}`;
+          throw new Error(`Gagal memanggil API Gemini: ${errMsg}. Pastikan API Key yang Anda masukkan valid.`);
+        }
+
+        const apiData = await response.json();
+        const resultText = apiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+
+        try {
+          finalResult = JSON.parse(resultText);
+          if (finalResult && Array.isArray(finalResult.ketidaksesuaian)) {
+            finalResult.ketidaksesuaian = finalResult.ketidaksesuaian.map(item => {
+              item.slide_index = Number(item.slide_index) || 1;
+              if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length === 4) {
+                const [ymin, xmin, ymax, xmax] = item.box_2d.map(Number);
+                item.koordinat = {
+                  x: xmin / 10,
+                  y: ymin / 10,
+                  w: (xmax - xmin) / 10,
+                  h: (ymax - ymin) / 10
+                };
+              }
+              return item;
+            });
+          }
+          finalResult.hasBrief = hasBriefText;
+        } catch (e) {
+          console.error("Failed to parse Gemini JSON output:", resultText);
+          finalResult = {
+            error: "Gagal memproses format data hasil analisis.",
+            raw: resultText
+          };
+        }
+
+      } else {
+        // --- PATH 2: Fallback to Server API (Uses Server Key) ---
+        console.log("Using serverless API endpoint fallback...");
+        const formData = new FormData();
+        compressedFiles.forEach(file => {
+          formData.append("image", file);
+        });
+        formData.append("briefType", activeTab);
+        formData.append("posterType", posterType);
+
+        if (activeTab === "text") {
+          formData.append("briefText", briefText);
+          briefTitle = briefText.trim().substring(0, 30) || "Brief Teks";
+        } else if (activeTab === "link") {
+          formData.append("briefLink", briefLink);
+          briefTitle = briefLink.substring(0, 30) || "Google Docs Link";
+        } else if (activeTab === "file") {
+          formData.append("briefFile", briefFile);
+          briefTitle = briefFile?.name || "Brief File";
+        }
+
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          body: formData,
+        });
+
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          const textText = await response.text();
+          console.error("Non-JSON response received:", textText);
+          if (response.status === 504 || response.status === 544 || textText.toLowerCase().includes("timeout") || textText.toLowerCase().includes("limit")) {
+            throw new Error("Analisis terputus karena server timeout (batas waktu 10 detik di Vercel Free). Silakan coba lagi dengan jumlah slide lebih sedikit, atau pastikan ukuran gambar lebih kecil. Untuk menghindari batas waktu ini secara permanen, harap konfigurasi API Key pribadi Anda di panel Pengaturan.");
+          }
+          throw new Error(`Terjadi kesalahan server (HTTP ${response.status}). Silakan coba beberapa saat lagi.`);
+        }
+        
+        if (!response.ok) {
+          throw new Error(data.error || "Gagal menganalisis gambar.");
+        }
+
+        finalResult = data.result;
       }
 
-      setResults(data.result);
+      setResults(finalResult);
 
       // Save to local history list
       try {
         const compressedThumbs = await Promise.all(
           imageFiles.map(file => compressImageForHistory(file))
         );
-        
-        const briefTitle = activeTab === "text" 
-          ? (briefText.trim().substring(0, 30) || "Brief Teks") 
-          : activeTab === "file" 
-            ? (briefFile?.name || "Brief File") 
-            : (briefLink.substring(0, 30) || "Google Docs Link");
 
         const historyItem = {
           id: Date.now(),
@@ -279,12 +568,12 @@ export default function Home() {
             minute: "2-digit" 
           }),
           title: briefTitle,
-          results: data.result,
+          results: finalResult,
           thumbnails: compressedThumbs,
           thumbnail: compressedThumbs[0],
           metrics: {
-            totalErrors: data.result?.ketidaksesuaian?.length || 0,
-            totalSuccess: data.result?.sesuai?.length || 0
+            totalErrors: finalResult?.ketidaksesuaian?.length || 0,
+            totalSuccess: finalResult?.sesuai?.length || 0
           }
         };
 
@@ -301,7 +590,6 @@ export default function Home() {
       setIsAnalyzing(false);
     }
   };
-
   const handleCopyText = (text, idx) => {
     // Strip markdown formatting and parenthetical corrections
     let cleanText = text
@@ -404,9 +692,19 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <header className={`${styles.header} animate-fade-in`}>
-        <h1 className={styles.title}>
-          Desainer <span className={styles.serifItalic}>Itqan</span>
-        </h1>
+        <div className={styles.headerTopRow}>
+          <h1 className={styles.title}>
+            Desainer <span className={styles.serifItalic}>Itqan</span>
+          </h1>
+          <button 
+            className={`${styles.settingsToggle} no-print`} 
+            onClick={() => setShowSettings(!showSettings)}
+            title="Pengaturan API Key"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Pengaturan API</span>
+          </button>
+        </div>
         <p className={styles.subtitle}>
           Pastikan hasil{" "}
           <span className={styles.inlineThumbWrapper}>
@@ -419,6 +717,87 @@ export default function Home() {
           <span className={styles.serifItalic}>brief</span> awal.
         </p>
       </header>
+
+      {showSettings && (
+        <div className={`${styles.settingsPanel} glass-panel animate-fade-in`}>
+          <div className={styles.settingsHeader}>
+            <h3 className={styles.settingsTitle}>
+              ⚙️ Pengaturan API Gemini (Bypass Timeout)
+            </h3>
+            <button 
+              className={styles.closeSettingsBtn}
+              onClick={() => setShowSettings(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <div className={styles.settingsBody}>
+            <p className={styles.settingsDesc}>
+              Batas waktu eksekusi serverless Vercel Free adalah **10 detik**. Untuk poster dengan banyak slide (carousel) atau gambar berukuran besar, disarankan memasukkan API Key pribadi Anda. Proses analisis akan berjalan **langsung dari browser Anda** ke Google API, sehingga 100% bebas dari batasan timeout 10 detik.
+            </p>
+            <div className={styles.settingsInputWrapper}>
+              <label htmlFor="apiKeyInput" className={styles.settingsLabel}>
+                Gemini API Key Anda:
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <input 
+                  type="password"
+                  id="apiKeyInput"
+                  placeholder="Masukkan Gemini API Key Anda (AIzaSy...)"
+                  value={userApiKey}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setUserApiKey(val);
+                    if (val.trim()) {
+                      localStorage.setItem("qc_gemini_api_key", val.trim());
+                    } else {
+                      localStorage.removeItem("qc_gemini_api_key");
+                    }
+                  }}
+                  className={styles.settingsInput}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid rgba(0, 0, 0, 0.25)',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    flex: 1
+                  }}
+                />
+                {userApiKey && (
+                  <button 
+                    className={styles.clearApiKeyBtn}
+                    onClick={() => {
+                      setUserApiKey("");
+                      localStorage.removeItem("qc_gemini_api_key");
+                    }}
+                    style={{
+                      background: 'rgba(0,0,0,0.05)',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      borderRadius: '8px',
+                      padding: '0 16px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className={styles.settingsNote} style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'rgba(0,0,0,0.7)' }}>
+              💡 **Cara mendapatkan API Key Gratis:** Buka <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className={styles.settingsLink} style={{ color: '#0d5c56', fontWeight: 600, textDecoration: 'underline' }}>Google AI Studio</a>, masuk dengan akun Google Anda, klik **"Get API Key"**, lalu salin kodenya ke sini.
+            </div>
+            <div className={styles.settingsStatus} style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)', fontSize: '0.95rem' }}>
+              Status saat ini: {userApiKey ? (
+                <span style={{ color: '#0d5c56', fontWeight: 600 }}>🟢 Direct Client Fetch Aktif (Bypass Timeout Aktif)</span>
+              ) : (
+                <span style={{ color: 'rgba(0,0,0,0.5)' }}>⚪ Menggunakan API Key Bawaan Server (Fallback, Maks. 10 Detik)</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {errorMsg && (
         <div className={`${styles.errorBox} animate-fade-in`}>
