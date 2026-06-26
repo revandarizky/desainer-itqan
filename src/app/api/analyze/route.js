@@ -1,6 +1,4 @@
-import mammoth from 'mammoth';
-
-export const maxDuration = 60; // Meningkatkan timeout Vercel Serverless menjadi 60 detik (bawaan Hobby tier adalah 10 detik)
+export const runtime = 'edge';
 
 export async function POST(request) {
   try {
@@ -149,60 +147,13 @@ ATURAN VALIDASI TAMBAHAN JADWAL KAJIAN RUTIN:
 4. Khusus Kajian Ahad Malam, periksa pekan ke berapa tanggal masehi acara tersebut jatuh di bulan bersangkutan (pekan 2 & 3 atau pekan 4) untuk menentukan kecocokan pematerinya. Jika penulisan pekan atau nama pematerinya tidak sinkron, laporkan ke daftar "ketidaksesuaian".`;
     }
 
-    let hasBrief = false;
+    const textVal = formData.get('briefText')?.trim() || '';
+    briefContent = textVal;
+    let hasBrief = !!briefContent;
     const userParts = [];
 
-    if (briefType === 'text') {
-      const textVal = formData.get('briefText')?.trim();
-      if (textVal) {
-        briefContent = textVal;
-        hasBrief = true;
-        userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-      }
-    } 
-    else if (briefType === 'link') {
-      const link = formData.get('briefLink')?.trim();
-      if (link) {
-        const match = link.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        if (match && match[1]) {
-          const docId = match[1];
-          const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-          const res = await fetch(exportUrl);
-          if (!res.ok) {
-            throw new Error('Gagal mengakses link Google Docs. Pastikan link diset "Anyone with the link can view".');
-          }
-          briefContent = await res.text();
-          hasBrief = true;
-          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-        } else {
-          throw new Error('Link Google Docs tidak valid. Harap sertakan URL dokumen yang benar.');
-        }
-      }
-    } 
-    else if (briefType === 'file') {
-      const file = formData.get('briefFile');
-      if (file && file.size > 0) {
-        const fileBuffer = await file.arrayBuffer();
-        
-        if (file.name.toLowerCase().endsWith('.pdf')) {
-          if (typeof global.DOMMatrix === 'undefined') {
-            global.DOMMatrix = class DOMMatrix {};
-          }
-          const { PDFParse } = await import('pdf-parse');
-          const parser = new PDFParse({ data: Buffer.from(fileBuffer) });
-          const pdfData = await parser.getText();
-          briefContent = pdfData.text;
-          hasBrief = true;
-          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-        } else if (file.name.toLowerCase().endsWith('.docx')) {
-          const result = await mammoth.extractRawText({ buffer: Buffer.from(fileBuffer) });
-          briefContent = result.value;
-          hasBrief = true;
-          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-        } else {
-          throw new Error('Format file tidak didukung. Harap unggah .pdf or .docx');
-        }
-      }
+    if (hasBrief) {
+      userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
     }
 
     if (!hasBrief) {

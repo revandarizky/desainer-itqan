@@ -274,9 +274,6 @@ export default function Home() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [history, setHistory] = useState([]);
 
-  const [userApiKey, setUserApiKey] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-
   // Manual Box Refiner States
   const [editingCoordsIdx, setEditingCoordsIdx] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -286,19 +283,15 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const briefFileInputRef = useRef(null);
 
-  // Load configuration and history on mount
+  // Load history on mount
   useEffect(() => {
     try {
-      const savedKey = localStorage.getItem("qc_gemini_api_key");
-      if (savedKey) {
-        setUserApiKey(savedKey);
-      }
       const savedHistory = localStorage.getItem("qc_history");
       if (savedHistory) {
         setHistory(JSON.parse(savedHistory));
       }
     } catch (e) {
-      console.error("Failed to load local storage configurations:", e);
+      console.error("Failed to load local storage history:", e);
     }
   }, []);
 
@@ -358,198 +351,83 @@ export default function Home() {
         imageFiles.map(file => compressImageForUpload(file))
       );
 
-      let finalResult;
-      let hasBriefText = false;
+      let briefContent = "";
       let briefTitle = "";
 
-      if (userApiKey && userApiKey.trim()) {
-        // --- PATH 1: Direct Client-Side Fetch (Bypass Vercel Timeout) ---
-        console.log("Using direct client-side fetch with user-provided Gemini API Key...");
-        
-        let briefContent = "";
-        
-        if (activeTab === "text") {
-          briefContent = briefText.trim();
-          hasBriefText = !!briefContent;
-          briefTitle = briefContent.substring(0, 30) || "Brief Teks";
-        } else if (activeTab === "link") {
-          briefTitle = briefLink.substring(0, 30) || "Google Docs Link";
-          if (briefLink.trim()) {
-            const parseFormData = new FormData();
-            parseFormData.append("briefType", "link");
-            parseFormData.append("briefLink", briefLink);
-            
-            const parseRes = await fetch("/api/parse-brief", {
-              method: "POST",
-              body: parseFormData,
-            });
-            if (!parseRes.ok) {
-              const parseData = await parseRes.json().catch(() => ({}));
-              throw new Error(parseData.error || "Gagal mengurai link Google Docs di server.");
-            }
-            const parseData = await parseRes.json();
-            briefContent = parseData.text;
-            hasBriefText = !!briefContent.trim();
-          }
-        } else if (activeTab === "file") {
-          briefTitle = briefFile?.name || "Brief File";
-          if (briefFile) {
-            const parseFormData = new FormData();
-            parseFormData.append("briefType", "file");
-            parseFormData.append("briefFile", briefFile);
-            
-            const parseRes = await fetch("/api/parse-brief", {
-              method: "POST",
-              body: parseFormData,
-            });
-            if (!parseRes.ok) {
-              const parseData = await parseRes.json().catch(() => ({}));
-              throw new Error(parseData.error || "Gagal mengurai file brief di server.");
-            }
-            const parseData = await parseRes.json();
-            briefContent = parseData.text;
-            hasBriefText = !!briefContent.trim();
-          }
-        }
-
-        const userParts = [];
-        if (hasBriefText) {
-          userParts.push({ text: `\n\n=== BRIEF DESAIN ===\n${briefContent}\n\nPeriksa gambar desain berikut:` });
-        } else {
-          userParts.push({ text: `\n\n=== INFO ===\nTidak ada berkas/teks brief referensi yang dilampirkan.
-Karena tidak ada brief referensi, tugas utama kamu adalah menganalisis seluruh teks di dalam poster gambar desain secara visual dan mendeteksi:
-1. Kesalahan ejaan atau salah ketik (typo) secara individual dalam bahasa Indonesia (misal: "Kegiatan" salah ketik menjadi "Kegiatn", atau "rezeki" ditulis "rezki").
-2. Keselarasan logika internal poster gambar desain tersebut (seperti kecocokan hari dengan tanggalnya, sinkronisasi judul hari kajian dengan tanggal).
-3. Validasi nama Ustaz/Ustadzah dan waktu kajian terhadap basis data Jadwal Kajian Rutin MPD di atas (jika kategori Kajian Rutin aktif).
-
-PENTING - ATURAN PENCEGAHAN TYPO PALSU & KOREKSI GRAMATIKAL:
-- Dilarang keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti "dan", "oleh", "yang", "di", "ke") jika ejaan masing-masing kata secara individual sudah benar.
-- Jangan melaporkan typo jika kata tersebut sebenarnya sudah ditulis secara baku/benar di gambar poster (misal: "rezekinya" atau "rezeki"). Berhati-hatilah dengan OCR visual dari pihakmu sendiri yang terkadang salah membaca atau melewatkan huruf (seperti melewatkan huruf 'e' pada kata "rezekinya" sehingga kamu mengiranya "rezkinya"). Verifikasi secara visual dengan sangat jeli! Jika pada gambar terlihat kata yang benar/baku, DILARANG KERAS melaporkannya sebagai typo.
-- Abaikan perbedaan visual homoglyph antara huruf kapital 'I' dan huruf kecil 'l' (seperti "Ia kehendaki" vs "la kehendaki"), jangan pernah laporkan ini sebagai typo.
-- Abaikan perbedaan huruf besar dan kecil (seperti "Surat" vs "surat").
-
-Setiap kali kamu menemukan typo atau salah penulisan kata:
-- Tulis versi penulisan yang baku/benar/direkomendasikan di properti "di_brief" (misal: "Kegiatan" atau "Masjid").
-- Tulis teks salah ketik yang tampil di gambar di property "di_gambar" dengan tanda sorotan (**) (misal: "Kegiat**n**" or "Masj**i**d").
-- Jelaskan pembetulannya di properti "catatan".
-
-Periksa gambar desain berikut:` });
-        }
-
-        // Add all base64 images to userParts
-        for (const file of compressedFiles) {
-          const imgBase64 = await fileToBase64(file);
-          userParts.push({
-            inline_data: {
-              mime_type: file.type,
-              data: imgBase64
-            }
+      // --- EXTRAKSI BRIEF MENGGUNAKAN PARSER SERVERLESS ---
+      if (activeTab === "text") {
+        briefContent = briefText.trim();
+        briefTitle = briefContent.substring(0, 30) || "Brief Teks";
+      } else if (activeTab === "link") {
+        briefTitle = briefLink.substring(0, 30) || "Google Docs Link";
+        if (briefLink.trim()) {
+          const parseFormData = new FormData();
+          parseFormData.append("briefType", "link");
+          parseFormData.append("briefLink", briefLink);
+          
+          const parseRes = await fetch("/api/parse-brief", {
+            method: "POST",
+            body: parseFormData,
           });
-        }
-
-        const systemInstruction = getSystemInstruction(posterType);
-
-        const requestBody = {
-          system_instruction: {
-            parts: [{ text: systemInstruction }]
-          },
-          contents: [{ parts: userParts }],
-          generationConfig: {
-            responseMimeType: "application/json"
+          if (!parseRes.ok) {
+            const parseData = await parseRes.json().catch(() => ({}));
+            throw new Error(parseData.error || "Gagal mengurai link Google Docs di server.");
           }
-        };
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey.trim()}`;
-        
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          const errMsg = errData.error?.message || `HTTP ${response.status} ${response.statusText}`;
-          throw new Error(`Gagal memanggil API Gemini: ${errMsg}. Pastikan API Key yang Anda masukkan valid.`);
+          const parseData = await parseRes.json();
+          briefContent = parseData.text;
         }
-
-        const apiData = await response.json();
-        const resultText = apiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-
-        try {
-          finalResult = JSON.parse(resultText);
-          if (finalResult && Array.isArray(finalResult.ketidaksesuaian)) {
-            finalResult.ketidaksesuaian = finalResult.ketidaksesuaian.map(item => {
-              item.slide_index = Number(item.slide_index) || 1;
-              if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length === 4) {
-                const [ymin, xmin, ymax, xmax] = item.box_2d.map(Number);
-                item.koordinat = {
-                  x: xmin / 10,
-                  y: ymin / 10,
-                  w: (xmax - xmin) / 10,
-                  h: (ymax - ymin) / 10
-                };
-              }
-              return item;
-            });
+      } else if (activeTab === "file") {
+        briefTitle = briefFile?.name || "Brief File";
+        if (briefFile) {
+          const parseFormData = new FormData();
+          parseFormData.append("briefType", "file");
+          parseFormData.append("briefFile", briefFile);
+          
+          const parseRes = await fetch("/api/parse-brief", {
+            method: "POST",
+            body: parseFormData,
+          });
+          if (!parseRes.ok) {
+            const parseData = await parseRes.json().catch(() => ({}));
+            throw new Error(parseData.error || "Gagal mengurai file brief di server.");
           }
-          finalResult.hasBrief = hasBriefText;
-        } catch (e) {
-          console.error("Failed to parse Gemini JSON output:", resultText);
-          finalResult = {
-            error: "Gagal memproses format data hasil analisis.",
-            raw: resultText
-          };
+          const parseData = await parseRes.json();
+          briefContent = parseData.text;
         }
-
-      } else {
-        // --- PATH 2: Fallback to Server API (Uses Server Key) ---
-        console.log("Using serverless API endpoint fallback...");
-        const formData = new FormData();
-        compressedFiles.forEach(file => {
-          formData.append("image", file);
-        });
-        formData.append("briefType", activeTab);
-        formData.append("posterType", posterType);
-
-        if (activeTab === "text") {
-          formData.append("briefText", briefText);
-          briefTitle = briefText.trim().substring(0, 30) || "Brief Teks";
-        } else if (activeTab === "link") {
-          formData.append("briefLink", briefLink);
-          briefTitle = briefLink.substring(0, 30) || "Google Docs Link";
-        } else if (activeTab === "file") {
-          formData.append("briefFile", briefFile);
-          briefTitle = briefFile?.name || "Brief File";
-        }
-
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          body: formData,
-        });
-
-        let data;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        } else {
-          const textText = await response.text();
-          console.error("Non-JSON response received:", textText);
-          if (response.status === 504 || response.status === 544 || textText.toLowerCase().includes("timeout") || textText.toLowerCase().includes("limit")) {
-            throw new Error("Analisis terputus karena server timeout (batas waktu 10 detik di Vercel Free). Silakan coba lagi dengan jumlah slide lebih sedikit, atau pastikan ukuran gambar lebih kecil. Untuk menghindari batas waktu ini secara permanen, harap konfigurasi API Key pribadi Anda di panel Pengaturan.");
-          }
-          throw new Error(`Terjadi kesalahan server (HTTP ${response.status}). Silakan coba beberapa saat lagi.`);
-        }
-        
-        if (!response.ok) {
-          throw new Error(data.error || "Gagal menganalisis gambar.");
-        }
-
-        finalResult = data.result;
       }
 
+      // --- KIRIM KE /api/analyze (EDGE RUNTIME - TIMEOUT 30 DETIK) ---
+      const formData = new FormData();
+      compressedFiles.forEach(file => {
+        formData.append("image", file);
+      });
+      formData.append("briefType", "text"); // Selalu kirim sebagai text karena sudah diekstrak di client
+      formData.append("briefText", briefContent);
+      formData.append("posterType", posterType);
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textText = await response.text();
+        console.error("Non-JSON response received:", textText);
+        if (response.status === 504 || response.status === 544 || textText.toLowerCase().includes("timeout") || textText.toLowerCase().includes("limit")) {
+          throw new Error("Analisis terputus karena server timeout (batas waktu 30 detik di Vercel Edge). Silakan coba lagi dengan jumlah slide lebih sedikit.");
+        }
+        throw new Error(`Terjadi kesalahan server (HTTP ${response.status}). Silakan coba beberapa saat lagi.`);
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menganalisis gambar.");
+      }
+
+      const finalResult = data.result;
       setResults(finalResult);
 
       // Save to local history list
@@ -692,21 +570,9 @@ Periksa gambar desain berikut:` });
   return (
     <main className={styles.main}>
       <header className={`${styles.header} animate-fade-in no-print`}>
-        <div className={styles.headerTopRow}>
-          <h1 className={styles.title}>
-            Desainer <span className={styles.serifItalic}>Itqan</span>
-          </h1>
-          {viewState === 'input' && (
-            <button 
-              className={`${styles.settingsToggle} no-print`} 
-              onClick={() => setShowSettings(!showSettings)}
-              title="Pengaturan API Key"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-              <span>Pengaturan API</span>
-            </button>
-          )}
-        </div>
+        <h1 className={styles.title}>
+          Desainer <span className={styles.serifItalic}>Itqan</span>
+        </h1>
         <p className={styles.subtitle}>
           Pastikan hasil{" "}
           <span className={styles.inlineThumbWrapper}>
@@ -720,112 +586,9 @@ Periksa gambar desain berikut:` });
         </p>
       </header>
 
-      {showSettings && (
-        <div className={`${styles.settingsPanel} glass-panel animate-fade-in`}>
-          <div className={styles.settingsHeader}>
-            <h3 className={styles.settingsTitle}>
-              ⚙️ Pengaturan API Gemini (Bypass Timeout)
-            </h3>
-            <button 
-              className={styles.closeSettingsBtn}
-              onClick={() => setShowSettings(false)}
-            >
-              ✕
-            </button>
-          </div>
-          <div className={styles.settingsBody}>
-            <p className={styles.settingsDesc}>
-              Batas waktu eksekusi serverless Vercel Free adalah **10 detik**. Untuk poster dengan banyak slide (carousel) atau gambar berukuran besar, disarankan memasukkan API Key pribadi Anda. Proses analisis akan berjalan **langsung dari browser Anda** ke Google API, sehingga 100% bebas dari batasan timeout 10 detik.
-            </p>
-            <div className={styles.settingsInputWrapper}>
-              <label htmlFor="apiKeyInput" className={styles.settingsLabel}>
-                Gemini API Key Anda:
-              </label>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <input 
-                  type="password"
-                  id="apiKeyInput"
-                  placeholder="Masukkan Gemini API Key Anda (AIzaSy...)"
-                  value={userApiKey}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setUserApiKey(val);
-                    if (val.trim()) {
-                      localStorage.setItem("qc_gemini_api_key", val.trim());
-                    } else {
-                      localStorage.removeItem("qc_gemini_api_key");
-                    }
-                  }}
-                  className={styles.settingsInput}
-                  style={{
-                    background: '#FFFFFF',
-                    border: '1px solid rgba(0, 0, 0, 0.25)',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    flex: 1
-                  }}
-                />
-                {userApiKey && (
-                  <button 
-                    className={styles.clearApiKeyBtn}
-                    onClick={() => {
-                      setUserApiKey("");
-                      localStorage.removeItem("qc_gemini_api_key");
-                    }}
-                    style={{
-                      background: 'rgba(0,0,0,0.05)',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '8px',
-                      padding: '0 16px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    Hapus
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className={styles.settingsNote} style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'rgba(0,0,0,0.7)' }}>
-              💡 **Cara mendapatkan API Key Gratis:** Buka <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className={styles.settingsLink} style={{ color: '#0d5c56', fontWeight: 600, textDecoration: 'underline' }}>Google AI Studio</a>, masuk dengan akun Google Anda, klik **"Get API Key"**, lalu salin kodenya ke sini.
-            </div>
-            <div className={styles.settingsStatus} style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.08)', fontSize: '0.95rem' }}>
-              Status saat ini: {userApiKey ? (
-                <span style={{ color: '#0d5c56', fontWeight: 600 }}>🟢 Direct Client Fetch Aktif (Bypass Timeout Aktif)</span>
-              ) : (
-                <span style={{ color: 'rgba(0,0,0,0.5)' }}>⚪ Menggunakan API Key Bawaan Server (Fallback, Maks. 10 Detik)</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {errorMsg && (
         <div className={`${styles.errorBox} animate-fade-in`}>
           <strong>Error:</strong> {errorMsg}
-          {errorMsg.includes("Pengaturan") && (
-            <button 
-              onClick={() => setShowSettings(true)}
-              style={{
-                display: 'block',
-                marginTop: '0.75rem',
-                background: '#991B1B',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                transition: 'background 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#7F1D1D'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#991B1B'}
-            >
-              ⚙️ Buka Pengaturan API
-            </button>
-          )}
         </div>
       )}
 
