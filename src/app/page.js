@@ -870,68 +870,77 @@ export default function Home() {
                               }}
                               onMouseLeave={() => setHoveredMismatchIdx(null)}
                             >
-                              <input 
-                                type="checkbox" 
-                                checked={isChecked}
-                                className={styles.mismatchCheckbox}
-                                onChange={() => setCheckedMismatches(prev => ({
-                                  ...prev,
-                                  [idx]: !prev[idx]
-                                }))}
-                              />
+                              {/* 1. Unified Card Header */}
+                              <div className={styles.mismatchHeader}>
+                                <div className={styles.mismatchHeaderLeft}>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={isChecked}
+                                    className={styles.mismatchCheckbox}
+                                    onChange={() => setCheckedMismatches(prev => ({
+                                      ...prev,
+                                      [idx]: !prev[idx]
+                                    }))}
+                                  />
+                                  <span className={styles.mismatchIndexBadge}>{idx + 1}</span>
+                                  {item.slide_index && (
+                                    <span className={styles.slideBadge}>
+                                      Slide {item.slide_index}
+                                    </span>
+                                  )}
+                                  <span className={styles.elementBadge}>
+                                    {item.elemen || "Temuan"}
+                                  </span>
+                                </div>
+                                
+                                <div className={styles.mismatchHeaderActions}>
+                                  {/* Manual Refine Area Box Button */}
+                                  <button 
+                                    className={`${styles.adjustAreaBtn} ${editingCoordsIdx === idx ? styles.adjustAreaBtnActive : ''} no-print`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingCoordsIdx(editingCoordsIdx === idx ? null : idx);
+                                      if (item.slide_index) {
+                                        setCurrentSlideIndex(item.slide_index - 1);
+                                      }
+                                    }}
+                                    title="Gambarkan kotak sorotan manual pada poster"
+                                  >
+                                    {editingCoordsIdx === idx ? "✕ Batal" : "📍 Sorot Manual"}
+                                  </button>
+
+                                  {/* Copy text button */}
+                                  <button 
+                                    className={`${styles.copyBriefBtn} ${isCopied ? styles.copyBriefBtnCopied : ''} no-print`} 
+                                    onClick={() => handleCopyText(item.di_brief, idx)}
+                                    title="Salin teks perbaikan"
+                                  >
+                                    {isCopied ? (
+                                      <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ marginRight: '2px' }}><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Tersalin
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '2px' }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        Salin
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* 2. Inner Comparison Row (equal heights) */}
                               <div className={styles.mismatchCompareRow}>
                                 <div className={styles.mismatchBriefBox}>
                                   <div className={styles.compareBoxHeader}>
-                                    <div className={styles.compareBoxBadges}>
-                                      <span className={styles.mismatchIndexBadge}>{idx + 1}</span>
-                                      {item.slide_index && (
-                                        <span className={styles.slideBadge}>
-                                          Slide {item.slide_index}
-                                        </span>
-                                      )}
-                                      <span className={styles.compareLabelMini}>
-                                        {results?.hasBrief !== false ? "Brief" : "Baku"}
-                                      </span>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                      {/* Manual Refine Area Box Button */}
-                                      <button 
-                                        className={`${styles.adjustAreaBtn} ${editingCoordsIdx === idx ? styles.adjustAreaBtnActive : ''} no-print`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingCoordsIdx(editingCoordsIdx === idx ? null : idx);
-                                          if (item.slide_index) {
-                                            setCurrentSlideIndex(item.slide_index - 1);
-                                          }
-                                        }}
-                                        title="Gambarkan kotak sorotan manual pada poster"
-                                      >
-                                        {editingCoordsIdx === idx ? "✕ Batal" : "📍 Sorot Manual"}
-                                      </button>
-
-                                      {/* Copy text button */}
-                                      <button 
-                                        className={`${styles.copyBriefBtn} ${isCopied ? styles.copyBriefBtnCopied : ''} no-print`} 
-                                        onClick={() => handleCopyText(item.di_brief, idx)}
-                                        title="Salin teks perbaikan"
-                                      >
-                                        {isCopied ? (
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        ) : (
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        )}
-                                      </button>
-                                    </div>
+                                    <span className={styles.compareLabelMini}>
+                                      {results?.hasBrief !== false ? "Brief" : "Baku"}
+                                    </span>
                                   </div>
                                   <div className={styles.compareText}>
                                     {renderFormattedText(item.di_brief, 'brief')}
                                   </div>
-                                  {item.lokasi_deskriptif && (
-                                    <div className={styles.locationHelper}>
-                                      📍 <strong>Letak:</strong> {item.lokasi_deskriptif}
-                                    </div>
-                                  )}
                                 </div>
                                 <div className={styles.mismatchArrow}>➔</div>
                                 <div className={styles.mismatchDesainBox}>
@@ -942,6 +951,20 @@ export default function Home() {
                                     {renderFormattedText(item.di_gambar, 'desain')}
                                   </div>
                                 </div>
+                              </div>
+
+                              {/* 3. Card Footer for Location & Notes */}
+                              <div className={styles.mismatchFooter}>
+                                {item.lokasi_deskriptif && (
+                                  <div className={styles.locationHelper}>
+                                    📍 <strong>Letak:</strong> {item.lokasi_deskriptif}
+                                  </div>
+                                )}
+                                {item.catatan && (
+                                  <div className={styles.notesHelper}>
+                                    📝 <strong>Catatan:</strong> {item.catatan}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

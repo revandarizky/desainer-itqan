@@ -464,9 +464,10 @@
 
 .mismatchItem {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.25rem 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1.5rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   background: transparent;
   transition: all 0.2s ease;
@@ -823,27 +824,89 @@ textarea::-webkit-scrollbar-thumb:hover, .tabContent::-webkit-scrollbar-thumb:ho
 
 /* Clipboard & Action Buttons */
 .copyBriefBtn {
-  background: transparent;
-  border: none;
-  padding: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4B5563;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 3px 8px;
   border-radius: 4px;
-  color: rgba(0, 0, 0, 0.3);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  margin-left: 0.5rem;
+  margin-left: 0 !important;
   flex-shrink: 0;
+  gap: 0.25rem;
 }
 
 .copyBriefBtn:hover {
-  color: var(--foreground);
+  background: #FAF9F5;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #111111;
+}
+
+.mismatchHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+
+.mismatchHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mismatchHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.elementBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4B5563;
   background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.mismatchFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.notesHelper {
+  font-size: 0.8rem;
+  color: #374151;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  border-left: 3px solid var(--primary);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
 }
 
 .copyBriefBtnCopied {
-  color: var(--success) !important;
+  background: #ECFDF5 !important;
+  border-color: #10B981 !important;
+  color: #059669 !important;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.15);
 }
 
 .mismatchIndexBadge {
