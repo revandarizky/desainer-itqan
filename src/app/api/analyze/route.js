@@ -46,7 +46,8 @@ Aturan:
    - PENTING (DILARANG KOREKSI TATA BAHASA & KATA HUBUNG): Fokus HANYA pada kesalahan ejaan kata (spelling/typo) secara individual (seperti 'rezki' harusnya 'rezeki'). DILARANG keras melakukan koreksi tata bahasa, struktur kalimat, atau menyisipkan kata hubung baru (seperti 'dan', 'oleh', 'yang', 'di', 'ke') jika ejaan kata-kata di poster secara individual sudah benar.
      * Contoh: Jika di poster tertulis "diterbangkan dibolak-balikkan angin" dan ejaan setiap kata sudah benar, kamu TIDAK BOLEH melaporkannya sebagai typo atau menyisipkan kata "dan" ("diterbangkan **dan** dibolak-balikkan"). Ini bukan typo, melainkan gaya penulisan kutipan/hadits asli.
    - PENTING (DILARANG HALUSINASI TYPO / OCR ERROR): Jangan pernah melaporkan typo jika kata di gambar desain sebenarnya sudah tertulis secara baku/benar. Kamu harus sadar bahwa pembacaan OCR visual AI terkadang melewatkan huruf (misal: melewatkan huruf 'e' dalam kata "rezekinya" sehingga AI membacanya sebagai "rezkinya"). Verifikasi secara visual huruf demi huruf dengan sangat teliti! Jika pada gambar terlihat kata yang benar/baku (seperti "rezekinya" atau "rezeki"), DILARANG KERAS melaporkannya sebagai typo "rezkinya" / "rezki".
-   - Tulis versi ejaan yang benar di kolom "di_brief" dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
+    - Tulis versi ejaan yang benar di kolom "di_brief" dan versi ejaan yang salah di kolom "di_gambar", lalu beri tanda penyorot (**) pada perbedaannya.
+    - Kamu wajib menambahkan properti "lokasi_deskriptif" (string) pada setiap objek temuan "ketidaksesuaian". Kunci ini diisi penjelasan bahasa manusia yang singkat dan jelas mengenai di mana letak teks tersebut pada gambar desain (misalnya: "Di bawah judul utama, dekat daun hijau", "Di dalam baris info tanggal masehi/hijriah", "Di bagian paling bawah dekat kontak whatsapp"). Ini berfungsi sebagai pemandu alternatif jika koordinat box meleset.
 7. PENTING - KOORDINAT TYPO (VISUAL GROUNDING): Untuk setiap item di dalam daftar "ketidaksesuaian", kamu wajib menyertakan koordinat letak visual kata/teks yang salah ketik tersebut di dalam gambar poster desain dalam bentuk array 4 angka: [ymin, xmin, ymax, xmax] dengan skala 0 sampai 1000.
    - PENTING (CARA BERPIKIR SPASIAL & OCR): Jangan pernah menebak koordinat secara acak atau menempatkan kotak sorotan pada area ilustrasi gambar, foto manusia, logo, atau hiasan dekoratif.
      * Teks isi kajian pada poster-poster MPD umumnya berada di area tengah ke bawah (biasanya ymin > 500, misal di antara 600 sampai 900). Periksa letak teksnya dengan teliti.
@@ -84,6 +85,7 @@ Kamu harus mengembalikan data dalam format JSON dengan struktur berikut:
       "di_brief": "Spesifikasi/teks yang tertulis di brief",
       "di_gambar": "Teks/visual yang tampil di gambar desain",
       "catatan": "Penjelasan mengapa ini tidak sesuai atau letak salah ketiknya",
+      "lokasi_deskriptif": "Petunjuk letak teks di gambar (misal: 'Di bawah judul utama', 'Di baris kedua info waktu')",
       "box_2d": [750, 200, 780, 480],
       "slide_index": 1
     }

@@ -137,6 +137,12 @@ export default function Home() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [history, setHistory] = useState([]);
 
+  // Manual Box Refiner States
+  const [editingCoordsIdx, setEditingCoordsIdx] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [tempCoords, setTempCoords] = useState(null);
+
   const fileInputRef = useRef(null);
   const briefFileInputRef = useRef(null);
 
@@ -320,6 +326,60 @@ export default function Home() {
     const updatedHistory = history.filter(item => item.id !== id);
     setHistory(updatedHistory);
     localStorage.setItem("qc_history", JSON.stringify(updatedHistory));
+  };
+
+  const handleImageMouseDown = (e) => {
+    if (editingCoordsIdx === null) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const startX = ((e.clientX - rect.left) / rect.width) * 100;
+    const startY = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    setDragStart({ x: startX, y: startY });
+    setTempCoords({ x: startX, y: startY, w: 0, h: 0 });
+    setIsDragging(true);
+  };
+
+  const handleImageMouseMove = (e) => {
+    if (!isDragging || editingCoordsIdx === null) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const currentX = ((e.clientX - rect.left) / rect.width) * 100;
+    const currentY = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const x = Math.min(dragStart.x, currentX);
+    const y = Math.min(dragStart.y, currentY);
+    const w = Math.abs(dragStart.x - currentX);
+    const h = Math.abs(dragStart.y - currentY);
+    
+    setTempCoords({ x, y, w, h });
+  };
+
+  const handleImageMouseUp = () => {
+    if (!isDragging || editingCoordsIdx === null) return;
+    setIsDragging(false);
+    
+    if (tempCoords && tempCoords.w > 0.5 && tempCoords.h > 0.5) {
+      setResults(prev => {
+        const updated = { ...prev };
+        const item = updated.ketidaksesuaian[editingCoordsIdx];
+        item.koordinat = {
+          x: tempCoords.x,
+          y: tempCoords.y,
+          w: tempCoords.w,
+          h: tempCoords.h
+        };
+        item.box_2d = [
+          Math.round(tempCoords.y * 10),
+          Math.round(tempCoords.x * 10),
+          Math.round((tempCoords.y + tempCoords.h) * 10),
+          Math.round((tempCoords.x + tempCoords.w) * 10)
+        ];
+        return updated;
+      });
+    }
+    
+    setEditingCoordsIdx(null);
+    setTempCoords(null);
   };
 
   const viewState = isAnalyzing ? 'loading' : results ? 'result' : 'input';
@@ -625,12 +685,25 @@ export default function Home() {
               </h3>
               {imagePreviews && imagePreviews.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div className={styles.imageOverlayContainer}>
+                  <div 
+                    className={`${styles.imageOverlayContainer} ${editingCoordsIdx !== null ? styles.drawingModeActive : ''}`}
+                    onMouseDown={handleImageMouseDown}
+                    onMouseMove={handleImageMouseMove}
+                    onMouseUp={handleImageMouseUp}
+                  >
                     <img 
                       src={imagePreviews[currentSlideIndex]} 
                       alt={`Analisis Gambar Slide ${currentSlideIndex + 1}`} 
                       className={styles.analyzedImage} 
+                      draggable={false}
                     />
+                    
+                    {/* Drawing mode banner indicator */}
+                    {editingCoordsIdx !== null && (
+                      <div className={styles.drawingBanner}>
+                        ✍️ Mode Menggambar: Klik & seret kursor pada gambar untuk menggambar area sorotan #{editingCoordsIdx + 1}
+                      </div>
+                    )}
                     
                     {/* Bounding box overlays */}
                     {results.ketidaksesuaian?.map((item, idx) => {
@@ -653,6 +726,22 @@ export default function Home() {
                         </div>
                       );
                     })}
+
+                    {/* Temporary Drag Selection Box */}
+                    {tempCoords && (
+                      <div 
+                        className={styles.boundingBoxOverlay}
+                        style={{
+                          left: `${tempCoords.x}%`,
+                          top: `${tempCoords.y}%`,
+                          width: `${tempCoords.w}%`,
+                          height: `${tempCoords.h}%`,
+                          borderStyle: 'dashed',
+                          borderColor: '#EF4444',
+                          background: 'rgba(239, 68, 68, 0.15)'
+                        }}
+                      />
+                    )}
                   </div>
                   
                   {/* Carousel Controls */}
@@ -805,22 +894,44 @@ export default function Home() {
                                       </span>
                                     </div>
                                     
-                                    {/* Copy text button */}
-                                    <button 
-                                      className={`${styles.copyBriefBtn} ${isCopied ? styles.copyBriefBtnCopied : ''} no-print`} 
-                                      onClick={() => handleCopyText(item.di_brief, idx)}
-                                      title="Salin teks perbaikan"
-                                    >
-                                      {isCopied ? (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                      ) : (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                      )}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                      {/* Manual Refine Area Box Button */}
+                                      <button 
+                                        className={`${styles.adjustAreaBtn} ${editingCoordsIdx === idx ? styles.adjustAreaBtnActive : ''} no-print`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingCoordsIdx(editingCoordsIdx === idx ? null : idx);
+                                          if (item.slide_index) {
+                                            setCurrentSlideIndex(item.slide_index - 1);
+                                          }
+                                        }}
+                                        title="Gambarkan kotak sorotan manual pada poster"
+                                      >
+                                        {editingCoordsIdx === idx ? "✕ Batal" : "📍 Sorot Manual"}
+                                      </button>
+
+                                      {/* Copy text button */}
+                                      <button 
+                                        className={`${styles.copyBriefBtn} ${isCopied ? styles.copyBriefBtnCopied : ''} no-print`} 
+                                        onClick={() => handleCopyText(item.di_brief, idx)}
+                                        title="Salin teks perbaikan"
+                                      >
+                                        {isCopied ? (
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        ) : (
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        )}
+                                      </button>
+                                    </div>
                                   </div>
                                   <div className={styles.compareText}>
                                     {renderFormattedText(item.di_brief, 'brief')}
                                   </div>
+                                  {item.lokasi_deskriptif && (
+                                    <div className={styles.locationHelper}>
+                                      📍 <strong>Letak:</strong> {item.lokasi_deskriptif}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className={styles.mismatchArrow}>➔</div>
                                 <div className={styles.mismatchDesainBox}>
